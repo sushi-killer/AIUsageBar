@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="outer" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#B04E30"/>
+      <stop offset="100%" stop-color="#E08A5E"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0.5" y1="0" x2="0.85" y2="0.85">
+      <stop offset="0%" stop-color="#0D9668"/>
+      <stop offset="100%" stop-color="#5EEAD4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark background with Apple squircle corners -->
+  <rect width="1024" height="1024" rx="228" ry="228" fill="#1C1C1E"/>
+
+  <!-- outer r=365, inner r=230, stroke=93 -->
+  <circle cx="512" cy="512" r="365" fill="none" stroke="#3A3A3C" stroke-width="93" opacity="0.25"/>
+  <circle cx="512" cy="512" r="365" fill="none" stroke="url(#outer)" stroke-width="93"
+          stroke-dasharray="1789 504" stroke-linecap="round" transform="rotate(-90 512 512)" opacity="0.9"/>
+
+  <circle cx="512" cy="512" r="230" fill="none" stroke="#3A3A3C" stroke-width="93" opacity="0.25"/>
+  <circle cx="512" cy="512" r="230" fill="none" stroke="url(#inner)" stroke-width="93"
+          stroke-dasharray="795 650" stroke-linecap="round" transform="rotate(-90 512 512)" opacity="0.9"/>
+
+  <g transform="translate(512, 512)" fill="#FFFFFF" stroke="none" opacity="1.0">
+    <path d="M0,-95 C12,-35 35,-12 95,0 C35,12 12,35 0,95 C-12,35 -35,12 -95,0 C-35,-12 -12,-35 0,-95Z"/>
+  </g>
+</svg>

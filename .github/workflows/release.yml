@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          xcodebuild -scheme AIUsageBar \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Package
+        run: |
+          APP_PATH=$(find build/DerivedData -name "AI Usage Bar.app" -type d | head -1)
+          cp -R "$APP_PATH" "AI Usage Bar.app"
+          zip -r -y "AIUsageBar-${{ steps.version.outputs.VERSION }}.zip" "AI Usage Bar.app"
+
+      - name: SHA256
+        id: sha
+        run: |
+          SHA=$(shasum -a 256 "AIUsageBar-${{ steps.version.outputs.VERSION }}.zip" | awk '{print $1}')
+          echo "SHA256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "**SHA256:** \`$SHA\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AIUsageBar-${{ steps.version.outputs.VERSION }}.zip
+          body: |
+            ## AIUsageBar v${{ steps.version.outputs.VERSION }}
+
+            **SHA256:** `${{ steps.sha.outputs.SHA256 }}`
+
+            ### Install
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/sushi-killer/AIUsageBar/main/install.sh | bash
+            ```
+
+            Or download the zip, extract, and move `AI Usage Bar.app` to `/Applications/`.
+          generate_release_notes: true

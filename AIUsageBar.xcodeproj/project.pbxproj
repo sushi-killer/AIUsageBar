@@ -1,0 +1,593 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000010000000000000001 /* AIUsageBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000001 /* AIUsageBarApp.swift */; };
+		A10000010000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000002 /* ContentView.swift */; };
+		A10000010000000000000003 /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000003 /* Provider.swift */; };
+		A10000010000000000000004 /* UsageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000004 /* UsageData.swift */; };
+		A10000010000000000000005 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000005 /* Settings.swift */; };
+		A10000010000000000000006 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000006 /* KeychainService.swift */; };
+		A10000010000000000000007 /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000007 /* ClaudeProvider.swift */; };
+		A10000010000000000000008 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000008 /* CodexProvider.swift */; };
+		A10000010000000000000023 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000023 /* StatusBarController.swift */; };
+		A10000010000000000000024 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000024 /* UpdateChecker.swift */; };
+		A10000010000000000000009 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000009 /* FileWatcher.swift */; };
+		A10000010000000000000010 /* ProviderTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000010 /* ProviderTabs.swift */; };
+		A10000010000000000000011 /* UsageRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000011 /* UsageRing.swift */; };
+		A10000010000000000000012 /* LimitBars.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000012 /* LimitBars.swift */; };
+		A10000010000000000000013 /* ResetTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000013 /* ResetTimer.swift */; };
+		A10000010000000000000014 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000014 /* SettingsView.swift */; };
+		A10000010000000000000015 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000015 /* NotificationService.swift */; };
+		A10000010000000000000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000016 /* Assets.xcassets */; };
+		A10000010000000000000017 /* UsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000017 /* UsageManager.swift */; };
+		A10000010000000000000018 /* ProviderHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000021 /* ProviderHeader.swift */; };
+		A20000010000000000000001 /* AIUsageBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000001 /* AIUsageBarTests.swift */; };
+		A20000010000000000000002 /* ProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000002 /* ProviderTests.swift */; };
+		A20000010000000000000003 /* UsageDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000003 /* UsageDataTests.swift */; };
+		A20000010000000000000004 /* ClaudeProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000004 /* ClaudeProviderTests.swift */; };
+		A20000010000000000000005 /* CodexProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000005 /* CodexProviderTests.swift */; };
+		A20000010000000000000006 /* SigningConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000006 /* SigningConfigurationTests.swift */; };
+		A20000010000000000000007 /* AppIconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000007 /* AppIconTests.swift */; };
+		A20000010000000000000008 /* ArchitectureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000008 /* ArchitectureTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A30000010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A40000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000010000000000000001;
+			remoteInfo = AIUsageBar;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A10000020000000000000001 /* AIUsageBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUsageBarApp.swift; sourceTree = "<group>"; };
+		A10000020000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A10000020000000000000003 /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
+		A10000020000000000000004 /* UsageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageData.swift; sourceTree = "<group>"; };
+		A10000020000000000000005 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		A10000020000000000000006 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		A10000020000000000000007 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
+		A10000020000000000000008 /* CodexProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexProvider.swift; sourceTree = "<group>"; };
+		A10000020000000000000023 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		A10000020000000000000024 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		A10000020000000000000009 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
+		A10000020000000000000010 /* ProviderTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTabs.swift; sourceTree = "<group>"; };
+		A10000020000000000000011 /* UsageRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageRing.swift; sourceTree = "<group>"; };
+		A10000020000000000000012 /* LimitBars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LimitBars.swift; sourceTree = "<group>"; };
+		A10000020000000000000013 /* ResetTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetTimer.swift; sourceTree = "<group>"; };
+		A10000020000000000000014 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A10000020000000000000015 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		A10000020000000000000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000020000000000000017 /* UsageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageManager.swift; sourceTree = "<group>"; };
+		A10000020000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000020000000000000019 /* AIUsageBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIUsageBar.entitlements; sourceTree = "<group>"; };
+		A50000020000000000000001 /* AIUsageBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIUsageBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A60000020000000000000001 /* AIUsageBarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIUsageBarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000020000000000000001 /* AIUsageBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUsageBarTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000002 /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000003 /* UsageDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageDataTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000004 /* ClaudeProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProviderTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000005 /* CodexProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexProviderTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000006 /* SigningConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigningConfigurationTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000007 /* AppIconTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconTests.swift; sourceTree = "<group>"; };
+		A20000020000000000000008 /* ArchitectureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureTests.swift; sourceTree = "<group>"; };
+		A10000020000000000000021 /* ProviderHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHeader.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A50000030000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000030000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A70000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A70000010000000000000002 /* AIUsageBar */,
+				A70000010000000000000003 /* AIUsageBarTests */,
+				A70000010000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A70000010000000000000002 /* AIUsageBar */ = {
+			isa = PBXGroup;
+			children = (
+				A10000020000000000000001 /* AIUsageBarApp.swift */,
+				A70000010000000000000005 /* Models */,
+				A70000010000000000000006 /* Services */,
+				A70000010000000000000007 /* Views */,
+				A70000010000000000000008 /* Resources */,
+				A10000020000000000000018 /* Info.plist */,
+				A10000020000000000000019 /* AIUsageBar.entitlements */,
+			);
+			path = AIUsageBar;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000003 /* AIUsageBarTests */ = {
+			isa = PBXGroup;
+			children = (
+				A20000020000000000000001 /* AIUsageBarTests.swift */,
+				A20000020000000000000002 /* ProviderTests.swift */,
+				A20000020000000000000003 /* UsageDataTests.swift */,
+				A20000020000000000000004 /* ClaudeProviderTests.swift */,
+				A20000020000000000000005 /* CodexProviderTests.swift */,
+				A20000020000000000000006 /* SigningConfigurationTests.swift */,
+				A20000020000000000000007 /* AppIconTests.swift */,
+				A20000020000000000000008 /* ArchitectureTests.swift */,
+			);
+			path = AIUsageBarTests;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A50000020000000000000001 /* AIUsageBar.app */,
+				A60000020000000000000001 /* AIUsageBarTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A10000020000000000000003 /* Provider.swift */,
+				A10000020000000000000004 /* UsageData.swift */,
+				A10000020000000000000005 /* Settings.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000006 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A10000020000000000000006 /* KeychainService.swift */,
+				A10000020000000000000007 /* ClaudeProvider.swift */,
+				A10000020000000000000008 /* CodexProvider.swift */,
+				A10000020000000000000009 /* FileWatcher.swift */,
+				A10000020000000000000015 /* NotificationService.swift */,
+				A10000020000000000000017 /* UsageManager.swift */,
+			A10000020000000000000023 /* StatusBarController.swift */,
+			A10000020000000000000024 /* UpdateChecker.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000007 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A10000020000000000000002 /* ContentView.swift */,
+				A10000020000000000000021 /* ProviderHeader.swift */,
+				A10000020000000000000010 /* ProviderTabs.swift */,
+				A10000020000000000000011 /* UsageRing.swift */,
+				A10000020000000000000012 /* LimitBars.swift */,
+				A10000020000000000000013 /* ResetTimer.swift */,
+				A10000020000000000000014 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A70000010000000000000008 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000020000000000000016 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000010000000000000001 /* AIUsageBar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000010000000000000001 /* Build configuration list for PBXNativeTarget "AIUsageBar" */;
+			buildPhases = (
+				A50000040000000000000001 /* Sources */,
+				A50000030000000000000001 /* Frameworks */,
+				A50000050000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AIUsageBar;
+			productName = AIUsageBar;
+			productReference = A50000020000000000000001 /* AIUsageBar.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A60000010000000000000001 /* AIUsageBarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000010000000000000002 /* Build configuration list for PBXNativeTarget "AIUsageBarTests" */;
+			buildPhases = (
+				A60000040000000000000001 /* Sources */,
+				A60000030000000000000001 /* Frameworks */,
+				A60000050000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A30000020000000000000001 /* PBXTargetDependency */,
+			);
+			name = AIUsageBarTests;
+			productName = AIUsageBarTests;
+			productReference = A60000020000000000000001 /* AIUsageBarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A40000010000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A50000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					A60000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A50000010000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = A80000010000000000000003 /* Build configuration list for PBXProject "AIUsageBar" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A70000010000000000000001;
+			productRefGroup = A70000010000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000010000000000000001 /* AIUsageBar */,
+				A60000010000000000000001 /* AIUsageBarTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A50000050000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000016 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000050000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A50000040000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000001 /* AIUsageBarApp.swift in Sources */,
+				A10000010000000000000002 /* ContentView.swift in Sources */,
+				A10000010000000000000003 /* Provider.swift in Sources */,
+				A10000010000000000000004 /* UsageData.swift in Sources */,
+				A10000010000000000000005 /* Settings.swift in Sources */,
+				A10000010000000000000006 /* KeychainService.swift in Sources */,
+				A10000010000000000000007 /* ClaudeProvider.swift in Sources */,
+				A10000010000000000000008 /* CodexProvider.swift in Sources */,
+				A10000010000000000000009 /* FileWatcher.swift in Sources */,
+				A10000010000000000000010 /* ProviderTabs.swift in Sources */,
+				A10000010000000000000011 /* UsageRing.swift in Sources */,
+				A10000010000000000000012 /* LimitBars.swift in Sources */,
+				A10000010000000000000013 /* ResetTimer.swift in Sources */,
+				A10000010000000000000014 /* SettingsView.swift in Sources */,
+				A10000010000000000000015 /* NotificationService.swift in Sources */,
+				A10000010000000000000017 /* UsageManager.swift in Sources */,
+				A10000010000000000000018 /* ProviderHeader.swift in Sources */,
+				A10000010000000000000023 /* StatusBarController.swift in Sources */,
+				A10000010000000000000024 /* UpdateChecker.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60000040000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000010000000000000001 /* AIUsageBarTests.swift in Sources */,
+				A20000010000000000000002 /* ProviderTests.swift in Sources */,
+				A20000010000000000000003 /* UsageDataTests.swift in Sources */,
+				A20000010000000000000004 /* ClaudeProviderTests.swift in Sources */,
+				A20000010000000000000005 /* CodexProviderTests.swift in Sources */,
+				A20000010000000000000006 /* SigningConfigurationTests.swift in Sources */,
+				A20000010000000000000007 /* AppIconTests.swift in Sources */,
+				A20000010000000000000008 /* ArchitectureTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A30000020000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000010000000000000001 /* AIUsageBar */;
+			targetProxy = A30000010000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A90000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A90000010000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A90000010000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AIUsageBar/AIUsageBar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIUsageBar/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Usage Bar";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebar.app;
+				PRODUCT_MODULE_NAME = AIUsageBar;
+				PRODUCT_NAME = "AI Usage Bar";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A90000010000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AIUsageBar/AIUsageBar.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIUsageBar/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Usage Bar";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebar.app;
+				PRODUCT_MODULE_NAME = AIUsageBar;
+				PRODUCT_NAME = "AI Usage Bar";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A90000010000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebar.AIUsageBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AI Usage Bar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AI Usage Bar";
+			};
+			name = Debug;
+		};
+		A90000010000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebar.AIUsageBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AI Usage Bar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AI Usage Bar";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80000010000000000000001 /* Build configuration list for PBXNativeTarget "AIUsageBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000003 /* Debug */,
+				A90000010000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000010000000000000002 /* Build configuration list for PBXNativeTarget "AIUsageBarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000005 /* Debug */,
+				A90000010000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000010000000000000003 /* Build configuration list for PBXProject "AIUsageBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000001 /* Debug */,
+				A90000010000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A40000010000000000000001 /* Project object */;
+}
