@@ -4,8 +4,8 @@ import os
 private let logger = Logger(subsystem: "com.aiusagebar.app", category: "ClaudeProvider")
 
 struct ClaudeAPIResponse: Codable {
-    let fiveHour: UsageWindowResponse
-    let sevenDay: UsageWindowResponse
+    let fiveHour: UsageWindowResponse?
+    let sevenDay: UsageWindowResponse?
 
     enum CodingKeys: String, CodingKey {
         case fiveHour = "five_hour"
@@ -15,7 +15,7 @@ struct ClaudeAPIResponse: Codable {
 
 struct UsageWindowResponse: Codable {
     let utilization: Double
-    let resetsAt: String
+    let resetsAt: String?
 
     enum CodingKeys: String, CodingKey {
         case utilization
@@ -69,6 +69,10 @@ actor ClaudeProvider {
     private let apiURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
     private let profileURL = URL(string: "https://api.anthropic.com/api/oauth/profile")!
     private let keychainService = KeychainService.shared
+
+    /// Session-level guard: once we've retried after a 401, don't retry again
+    /// until a successful response proves the credentials are valid.
+    private var hasRetriedAfterAuthError = false
 
     /// Cached plan label so we don't hit the profile API every refresh
     private var cachedPlanLabel: String?
@@ -142,6 +146,10 @@ actor ClaudeProvider {
     }
 
     private func fetchFromAPI() async -> UsageData? {
+        return await performAPIRequest(isRetry: false)
+    }
+
+    private func performAPIRequest(isRetry: Bool) async -> UsageData? {
         guard let credentials = await keychainService.getClaudeCredentials() else {
             return nil
         }
@@ -156,9 +164,29 @@ actor ClaudeProvider {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+            guard let httpResponse = response as? HTTPURLResponse else {
                 return nil
+            }
+
+            if httpResponse.statusCode == 401 {
+                logger.warning("Claude API returned 401 (isRetry=\(isRetry))")
+                if !isRetry && !hasRetriedAfterAuthError {
+                    hasRetriedAfterAuthError = true
+                    await keychainService.invalidateCache()
+                    return await performAPIRequest(isRetry: true)
+                }
+                return nil
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                logger.warning("Claude API returned status \(httpResponse.statusCode)")
+                return nil
+            }
+
+            hasRetriedAfterAuthError = false
+
+            if let jsonString = String(data: data, encoding: .utf8) {
+                logger.debug("Claude API raw response: \(jsonString)")
             }
 
             let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
@@ -174,21 +202,28 @@ actor ClaudeProvider {
         return Self.iso8601Standard.date(from: string)
     }
 
-    func convertAPIResponse(_ response: ClaudeAPIResponse) -> UsageData {
-        let fiveHourReset = parseISO8601(response.fiveHour.resetsAt)
-        let sevenDayReset = parseISO8601(response.sevenDay.resetsAt)
+    func convertAPIResponse(_ response: ClaudeAPIResponse) -> UsageData? {
+        guard let fiveHour = response.fiveHour else {
+            logger.info("API response missing five_hour window, falling back to logs")
+            return nil
+        }
+
+        let fiveHourReset = fiveHour.resetsAt.flatMap { parseISO8601($0) }
 
         let primaryWindow = UsageWindow(
-            percentage: response.fiveHour.utilization,
+            percentage: fiveHour.utilization,
             resetTime: fiveHourReset,
             isEstimated: false
         )
 
-        let secondaryWindow = UsageWindow(
-            percentage: response.sevenDay.utilization,
-            resetTime: sevenDayReset,
-            isEstimated: false
-        )
+        let secondaryWindow: UsageWindow? = response.sevenDay.map { sevenDay in
+            let sevenDayReset = sevenDay.resetsAt.flatMap { parseISO8601($0) }
+            return UsageWindow(
+                percentage: sevenDay.utilization,
+                resetTime: sevenDayReset,
+                isEstimated: false
+            )
+        }
 
         return UsageData(
             provider: .claude,
@@ -235,6 +270,10 @@ actor ClaudeProvider {
             return nil
         }
 
+        guard totalTokens > 0 else {
+            return nil
+        }
+
         // Estimate percentage based on a typical limit (rough estimation)
         let estimatedLimit = 1_000_000 // Typical 5-hour token limit
         let percentage = min(Double(totalTokens) / Double(estimatedLimit) * 100, 100)
@@ -273,13 +312,15 @@ actor ClaudeProvider {
             do {
                 let entry = try decoder.decode(ClaudeLogEntry.self, from: lineData)
 
-                // Check timestamp if available
-                if let timestampStr = entry.timestamp {
-                    if let timestamp = Self.iso8601Standard.date(from: timestampStr)
-                        ?? Self.iso8601WithFractional.date(from: timestampStr),
-                       timestamp < since {
-                        continue
-                    }
+                // Skip entries without timestamp — can't determine if they're in the window
+                guard let timestampStr = entry.timestamp else {
+                    continue
+                }
+
+                if let timestamp = Self.iso8601Standard.date(from: timestampStr)
+                    ?? Self.iso8601WithFractional.date(from: timestampStr),
+                   timestamp < since {
+                    continue
                 }
 
                 if let usage = entry.message?.usage {
