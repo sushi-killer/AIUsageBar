@@ -14,19 +14,25 @@ final class KeychainService {
     private let serviceName = "Claude Code-credentials"
 
     private var cachedCredentials: ClaudeCredentials?
-    private var cacheTimestamp: Date?
-    private let cacheTTL: TimeInterval = 30
+    private var hasFetchedOnce = false
 
     private init() {}
 
     func getClaudeCredentials() -> ClaudeCredentials? {
-        // Return cached credentials if still fresh
-        if let cached = cachedCredentials,
-           let timestamp = cacheTimestamp,
-           Date().timeIntervalSince(timestamp) < cacheTTL {
-            return cached
+        // Return cached credentials if we've already read from Keychain
+        if hasFetchedOnce {
+            return cachedCredentials
         }
 
+        return fetchFromKeychain()
+    }
+
+    func invalidateCache() {
+        cachedCredentials = nil
+        hasFetchedOnce = false
+    }
+
+    private func fetchFromKeychain() -> ClaudeCredentials? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
@@ -40,19 +46,14 @@ final class KeychainService {
         guard status == errSecSuccess,
               let data = result as? Data else {
             cachedCredentials = nil
-            cacheTimestamp = Date()
+            hasFetchedOnce = true
             return nil
         }
 
         let credentials = parseCredentials(from: data)
         cachedCredentials = credentials
-        cacheTimestamp = Date()
+        hasFetchedOnce = true
         return credentials
-    }
-
-    func invalidateCache() {
-        cachedCredentials = nil
-        cacheTimestamp = nil
     }
 
     private func parseCredentials(from data: Data) -> ClaudeCredentials? {

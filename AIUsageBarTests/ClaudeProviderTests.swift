@@ -104,10 +104,10 @@ final class ClaudeProviderTests: XCTestCase {
         let decoder = JSONDecoder()
         let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.45)
-        XCTAssertEqual(response.fiveHour.resetsAt, "2024-01-15T15:00:00Z")
-        XCTAssertEqual(response.sevenDay.utilization, 0.72)
-        XCTAssertEqual(response.sevenDay.resetsAt, "2024-01-20T00:00:00Z")
+        XCTAssertEqual(response.fiveHour?.utilization, 0.45)
+        XCTAssertEqual(response.fiveHour?.resetsAt, "2024-01-15T15:00:00Z")
+        XCTAssertEqual(response.sevenDay?.utilization, 0.72)
+        XCTAssertEqual(response.sevenDay?.resetsAt, "2024-01-20T00:00:00Z")
     }
 
     func testFetchUsageReturnsNilWithoutCredentials() {
@@ -137,10 +137,10 @@ final class ClaudeProviderTests: XCTestCase {
         let decoder = JSONDecoder()
         let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.85)
-        XCTAssertEqual(response.fiveHour.resetsAt, "2024-01-15T15:30:45.123Z")
-        XCTAssertEqual(response.sevenDay.utilization, 0.50)
-        XCTAssertEqual(response.sevenDay.resetsAt, "2024-01-22T00:00:00.000Z")
+        XCTAssertEqual(response.fiveHour?.utilization, 0.85)
+        XCTAssertEqual(response.fiveHour?.resetsAt, "2024-01-15T15:30:45.123Z")
+        XCTAssertEqual(response.sevenDay?.utilization, 0.50)
+        XCTAssertEqual(response.sevenDay?.resetsAt, "2024-01-22T00:00:00.000Z")
     }
 
     func testClaudeAPIResponseDecodingZeroUtilization() throws {
@@ -161,8 +161,8 @@ final class ClaudeProviderTests: XCTestCase {
         let decoder = JSONDecoder()
         let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.0)
-        XCTAssertEqual(response.sevenDay.utilization, 0.0)
+        XCTAssertEqual(response.fiveHour?.utilization, 0.0)
+        XCTAssertEqual(response.sevenDay?.utilization, 0.0)
     }
 
     func testClaudeAPIResponseDecodingFullUtilization() throws {
@@ -183,8 +183,8 @@ final class ClaudeProviderTests: XCTestCase {
         let decoder = JSONDecoder()
         let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 1.0)
-        XCTAssertEqual(response.sevenDay.utilization, 1.0)
+        XCTAssertEqual(response.fiveHour?.utilization, 1.0)
+        XCTAssertEqual(response.sevenDay?.utilization, 1.0)
     }
 
     func testClaudeAPIResponseDecodingHighPrecisionUtilization() throws {
@@ -205,8 +205,8 @@ final class ClaudeProviderTests: XCTestCase {
         let decoder = JSONDecoder()
         let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.123456789, accuracy: 0.000000001)
-        XCTAssertEqual(response.sevenDay.utilization, 0.987654321, accuracy: 0.000000001)
+        XCTAssertEqual(response.fiveHour?.utilization ?? 0, 0.123456789, accuracy: 0.000000001)
+        XCTAssertEqual(response.sevenDay?.utilization ?? 0, 0.987654321, accuracy: 0.000000001)
     }
 
     // MARK: - Usage Window Response Tests
@@ -229,7 +229,7 @@ final class ClaudeProviderTests: XCTestCase {
 
     // MARK: - Invalid JSON Tests
 
-    func testClaudeAPIResponseDecodingMissingFields() {
+    func testClaudeAPIResponseDecodingMissingFields() throws {
         let json = """
         {
             "five_hour": {
@@ -240,8 +240,11 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let decoder = JSONDecoder()
+        let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertThrowsError(try decoder.decode(ClaudeAPIResponse.self, from: data))
+        XCTAssertEqual(response.fiveHour?.utilization, 0.45)
+        XCTAssertNil(response.fiveHour?.resetsAt)
+        XCTAssertNil(response.sevenDay)
     }
 
     func testClaudeAPIResponseDecodingInvalidUtilization() {
@@ -264,12 +267,14 @@ final class ClaudeProviderTests: XCTestCase {
         XCTAssertThrowsError(try decoder.decode(ClaudeAPIResponse.self, from: data))
     }
 
-    func testClaudeAPIResponseDecodingEmptyJson() {
+    func testClaudeAPIResponseDecodingEmptyJson() throws {
         let json = "{}"
         let data = json.data(using: .utf8)!
         let decoder = JSONDecoder()
+        let response = try decoder.decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertThrowsError(try decoder.decode(ClaudeAPIResponse.self, from: data))
+        XCTAssertNil(response.fiveHour)
+        XCTAssertNil(response.sevenDay)
     }
 
     // MARK: - Log Entry Edge Cases
@@ -469,7 +474,7 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.65, "five_hour.utilization should parse correctly")
+        XCTAssertEqual(response.fiveHour?.utilization, 0.65, "five_hour.utilization should parse correctly")
     }
 
     func testFiveHourResetsAtParsing() throws {
@@ -489,7 +494,7 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.resetsAt, "2024-01-15T18:30:00Z", "five_hour.resets_at should parse correctly")
+        XCTAssertEqual(response.fiveHour?.resetsAt, "2024-01-15T18:30:00Z", "five_hour.resets_at should parse correctly")
     }
 
     func testSevenDayUtilizationParsing() throws {
@@ -509,7 +514,7 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.sevenDay.utilization, 0.40, "seven_day.utilization should parse correctly")
+        XCTAssertEqual(response.sevenDay?.utilization, 0.40, "seven_day.utilization should parse correctly")
     }
 
     func testSevenDayResetsAtParsing() throws {
@@ -529,7 +534,7 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.sevenDay.resetsAt, "2024-01-22T00:00:00Z", "seven_day.resets_at should parse correctly")
+        XCTAssertEqual(response.sevenDay?.resetsAt, "2024-01-22T00:00:00Z", "seven_day.resets_at should parse correctly")
     }
 
     func testAllResponseFieldsParseTogether() throws {
@@ -549,10 +554,10 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.utilization, 0.25)
-        XCTAssertEqual(response.fiveHour.resetsAt, "2024-02-10T14:00:00Z")
-        XCTAssertEqual(response.sevenDay.utilization, 0.88)
-        XCTAssertEqual(response.sevenDay.resetsAt, "2024-02-15T00:00:00Z")
+        XCTAssertEqual(response.fiveHour?.utilization, 0.25)
+        XCTAssertEqual(response.fiveHour?.resetsAt, "2024-02-10T14:00:00Z")
+        XCTAssertEqual(response.sevenDay?.utilization, 0.88)
+        XCTAssertEqual(response.sevenDay?.resetsAt, "2024-02-15T00:00:00Z")
     }
 
     func testResetsAtWithTimezoneOffset() throws {
@@ -572,8 +577,8 @@ final class ClaudeProviderTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let response = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
 
-        XCTAssertEqual(response.fiveHour.resetsAt, "2024-01-15T10:30:00-08:00", "Should handle negative timezone offset")
-        XCTAssertEqual(response.sevenDay.resetsAt, "2024-01-22T00:00:00+05:30", "Should handle positive timezone offset")
+        XCTAssertEqual(response.fiveHour?.resetsAt, "2024-01-15T10:30:00-08:00", "Should handle negative timezone offset")
+        XCTAssertEqual(response.sevenDay?.resetsAt, "2024-01-22T00:00:00+05:30", "Should handle positive timezone offset")
     }
 
     func testUtilizationBoundaryValues() throws {
@@ -586,8 +591,8 @@ final class ClaudeProviderTests: XCTestCase {
         """
 
         let responseMin = try JSONDecoder().decode(ClaudeAPIResponse.self, from: jsonMin.data(using: .utf8)!)
-        XCTAssertEqual(responseMin.fiveHour.utilization, 0.0)
-        XCTAssertEqual(responseMin.sevenDay.utilization, 0.0)
+        XCTAssertEqual(responseMin.fiveHour?.utilization, 0.0)
+        XCTAssertEqual(responseMin.sevenDay?.utilization, 0.0)
 
         // Test maximum boundary (1.0)
         let jsonMax = """
@@ -598,8 +603,8 @@ final class ClaudeProviderTests: XCTestCase {
         """
 
         let responseMax = try JSONDecoder().decode(ClaudeAPIResponse.self, from: jsonMax.data(using: .utf8)!)
-        XCTAssertEqual(responseMax.fiveHour.utilization, 1.0)
-        XCTAssertEqual(responseMax.sevenDay.utilization, 1.0)
+        XCTAssertEqual(responseMax.fiveHour?.utilization, 1.0)
+        XCTAssertEqual(responseMax.sevenDay?.utilization, 1.0)
     }
 
     // MARK: - ClaudeAPIResponse to UsageData Conversion Tests
@@ -620,7 +625,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         XCTAssertEqual(usageData.provider, .claude)
         XCTAssertEqual(usageData.dataSource, .api)
@@ -642,7 +648,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         // API returns utilization already as percentage
         XCTAssertEqual(usageData.primaryWindow.percentage, 45.0, accuracy: 0.001)
@@ -666,7 +673,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         XCTAssertEqual(usageData.primaryWindow.percentage, 25.0, accuracy: 0.001)
         XCTAssertEqual(usageData.displayPercentage, 25.0, accuracy: 0.001)
@@ -688,7 +696,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         let secondaryPct2 = try XCTUnwrap(usageData.secondaryWindow?.percentage)
         XCTAssertEqual(secondaryPct2, 85.0, accuracy: 0.001)
@@ -710,7 +719,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         // Reset times should be parsed as Date objects
         XCTAssertNotNil(usageData.primaryWindow.resetTime)
@@ -733,7 +743,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         // API data should not be estimated
         XCTAssertFalse(usageData.primaryWindow.isEstimated)
@@ -756,7 +767,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         // API response doesn't provide token counts
         XCTAssertNil(usageData.tokensUsed)
@@ -778,7 +790,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         XCTAssertEqual(usageData.primaryWindow.percentage, 0.0)
         XCTAssertEqual(usageData.secondaryWindow?.percentage, 0.0)
@@ -801,7 +814,8 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         XCTAssertEqual(usageData.primaryWindow.percentage, 100.0)
         XCTAssertEqual(usageData.secondaryWindow?.percentage, 100.0)
@@ -817,7 +831,8 @@ final class ClaudeProviderTests: XCTestCase {
         }
         """
         let responseGreen = try JSONDecoder().decode(ClaudeAPIResponse.self, from: jsonGreen.data(using: .utf8)!)
-        let usageGreen = await provider.convertAPIResponse(responseGreen)
+        let usageGreenOpt = await provider.convertAPIResponse(responseGreen)
+        let usageGreen = try XCTUnwrap(usageGreenOpt)
         XCTAssertEqual(usageGreen.status, .green)
 
         // Test yellow status (75% - 89%)
@@ -828,7 +843,8 @@ final class ClaudeProviderTests: XCTestCase {
         }
         """
         let responseYellow = try JSONDecoder().decode(ClaudeAPIResponse.self, from: jsonYellow.data(using: .utf8)!)
-        let usageYellow = await provider.convertAPIResponse(responseYellow)
+        let usageYellowOpt = await provider.convertAPIResponse(responseYellow)
+        let usageYellow = try XCTUnwrap(usageYellowOpt)
         XCTAssertEqual(usageYellow.status, .yellow)
 
         // Test red status (>= 90%)
@@ -839,7 +855,8 @@ final class ClaudeProviderTests: XCTestCase {
         }
         """
         let responseRed = try JSONDecoder().decode(ClaudeAPIResponse.self, from: jsonRed.data(using: .utf8)!)
-        let usageRed = await provider.convertAPIResponse(responseRed)
+        let usageRedOpt = await provider.convertAPIResponse(responseRed)
+        let usageRed = try XCTUnwrap(usageRedOpt)
         XCTAssertEqual(usageRed.status, .red)
     }
 
@@ -859,11 +876,158 @@ final class ClaudeProviderTests: XCTestCase {
 
         let data = json.data(using: .utf8)!
         let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
-        let usageData = await provider.convertAPIResponse(apiResponse)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
 
         XCTAssertEqual(usageData.primaryWindow.percentage, 12.3456789, accuracy: 0.0000001)
         let secondaryPct3 = try XCTUnwrap(usageData.secondaryWindow?.percentage)
         XCTAssertEqual(secondaryPct3, 98.7654321, accuracy: 0.0000001)
+    }
+
+    // MARK: - Optional API Response Tests
+
+    func testConvertAPIResponseMissingFiveHour() async throws {
+        let response = ClaudeAPIResponse(fiveHour: nil, sevenDay: UsageWindowResponse(utilization: 0.5, resetsAt: "2024-01-20T00:00:00Z"))
+        let result = await provider.convertAPIResponse(response)
+        XCTAssertNil(result, "Should return nil when five_hour is missing")
+    }
+
+    func testConvertAPIResponseMissingSevenDay() async throws {
+        let response = ClaudeAPIResponse(fiveHour: UsageWindowResponse(utilization: 30.0, resetsAt: "2024-01-15T18:00:00Z"), sevenDay: nil)
+        let usageDataOpt = await provider.convertAPIResponse(response)
+        let usageData = try XCTUnwrap(usageDataOpt)
+
+        XCTAssertEqual(usageData.primaryWindow.percentage, 30.0, accuracy: 0.001)
+        XCTAssertNil(usageData.secondaryWindow, "Secondary window should be nil when seven_day is missing")
+        XCTAssertEqual(usageData.dataSource, .api)
+    }
+
+    func testConvertAPIResponseOptionalResetsAt() async throws {
+        let response = ClaudeAPIResponse(fiveHour: UsageWindowResponse(utilization: 40.0, resetsAt: nil), sevenDay: UsageWindowResponse(utilization: 60.0, resetsAt: nil))
+        let usageDataOpt = await provider.convertAPIResponse(response)
+        let usageData = try XCTUnwrap(usageDataOpt)
+
+        XCTAssertEqual(usageData.primaryWindow.percentage, 40.0, accuracy: 0.001)
+        XCTAssertNil(usageData.primaryWindow.resetTime, "Reset time should be nil when resets_at is missing")
+        XCTAssertEqual(usageData.secondaryWindow?.percentage ?? 0, 60.0, accuracy: 0.001)
+        XCTAssertNil(usageData.secondaryWindow?.resetTime, "Secondary reset time should be nil when resets_at is missing")
+    }
+
+    // MARK: - Limit Reset Scenario Tests
+
+    func testAPIResponseAfterLimitReset_FiveHourNull() async throws {
+        // Simulates the API response right after a 5-hour window resets:
+        // API returns null for five_hour, valid seven_day
+        let json = """
+        {
+            "seven_day": {
+                "utilization": 35.0,
+                "resets_at": "2024-01-22T00:00:00Z"
+            }
+        }
+        """
+
+        let data = json.data(using: .utf8)!
+        let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+
+        XCTAssertNil(apiResponse.fiveHour, "five_hour should be nil after reset")
+        XCTAssertNotNil(apiResponse.sevenDay)
+
+        // convertAPIResponse should return nil (triggers log fallback)
+        let result = await provider.convertAPIResponse(apiResponse)
+        XCTAssertNil(result, "Should return nil when five_hour is missing so fetchUsage falls back to logs")
+    }
+
+    func testAPIResponseAfterLimitReset_BothNull() async throws {
+        // Simulates API response when both windows reset (e.g. plan change to Max X20)
+        let json = "{}"
+
+        let data = json.data(using: .utf8)!
+        let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+
+        XCTAssertNil(apiResponse.fiveHour)
+        XCTAssertNil(apiResponse.sevenDay)
+
+        let result = await provider.convertAPIResponse(apiResponse)
+        XCTAssertNil(result, "Should return nil when both windows are missing")
+    }
+
+    func testAPIResponseAfterLimitReset_FiveHourNullResetsAt() async throws {
+        // API returns utilization but no resets_at (happens briefly after reset)
+        let json = """
+        {
+            "five_hour": {
+                "utilization": 0.0
+            },
+            "seven_day": {
+                "utilization": 10.0,
+                "resets_at": "2024-01-22T00:00:00Z"
+            }
+        }
+        """
+
+        let data = json.data(using: .utf8)!
+        let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+
+        XCTAssertNotNil(apiResponse.fiveHour)
+        XCTAssertNil(apiResponse.fiveHour?.resetsAt, "resets_at should be nil right after reset")
+
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
+
+        XCTAssertEqual(usageData.primaryWindow.percentage, 0.0, accuracy: 0.001)
+        XCTAssertNil(usageData.primaryWindow.resetTime, "Reset time should be nil when API doesn't provide it")
+        XCTAssertFalse(usageData.primaryWindow.isEstimated, "API data should not be estimated")
+        XCTAssertEqual(usageData.dataSource, .api)
+    }
+
+    func testAPIResponseAfterPlanUpgrade_MaxX20() async throws {
+        // After upgrading to Max X20, API may return zeroed-out utilization
+        let json = """
+        {
+            "five_hour": {
+                "utilization": 0.0,
+                "resets_at": "2024-01-15T20:00:00Z"
+            },
+            "seven_day": {
+                "utilization": 0.0,
+                "resets_at": "2024-01-22T00:00:00Z"
+            }
+        }
+        """
+
+        let data = json.data(using: .utf8)!
+        let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
+
+        // Should show 0% usage, not 100%
+        XCTAssertEqual(usageData.primaryWindow.percentage, 0.0)
+        XCTAssertEqual(usageData.secondaryWindow?.percentage, 0.0)
+        XCTAssertEqual(usageData.status, .green, "Fresh plan should show green status, not red")
+        XCTAssertNotNil(usageData.primaryWindow.resetTime)
+        XCTAssertNotNil(usageData.secondaryWindow?.resetTime)
+    }
+
+    func testAPIResponsePartialReset_OnlySevenDayNull() async throws {
+        // Edge case: five_hour exists but seven_day is null
+        let json = """
+        {
+            "five_hour": {
+                "utilization": 15.0,
+                "resets_at": "2024-01-15T18:00:00Z"
+            }
+        }
+        """
+
+        let data = json.data(using: .utf8)!
+        let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
+        let usageDataOpt = await provider.convertAPIResponse(apiResponse)
+        let usageData = try XCTUnwrap(usageDataOpt)
+
+        XCTAssertEqual(usageData.primaryWindow.percentage, 15.0, accuracy: 0.001)
+        XCTAssertNil(usageData.secondaryWindow, "Weekly bar should be hidden when seven_day is null")
+        XCTAssertEqual(usageData.dataSource, .api)
     }
 
     // MARK: - Local Log Fallback Tests
