@@ -2,8 +2,8 @@
 
 <div>
 <h3>AI Usage Bar</h3>
-<p>Track your Claude Code and Codex CLI usage limits directly from the macOS menu bar.<br>
-See how much of your daily and weekly quota you've used, get notified before hitting limits,
+<p>Track your Claude Code, Codex, and Kimi Code subscription limits directly from the macOS menu bar.<br>
+See how much of your rolling and weekly quota you've used, get notified before hitting limits,
 and switch between providers in one click.</p>
 </div>
 
@@ -17,29 +17,37 @@ and switch between providers in one click.</p>
 
 ## Features
 
-- Real-time Claude Code & Codex CLI usage tracking
+- Real-time usage tracking for Claude Code, Codex, and Kimi Code
 - Dual time windows: 5-hour rolling + weekly limits
+- Enable/disable providers individually; choose which to show in the menu bar
 - Provider-colored usage bars & ring, status-colored tray icon (green / yellow / red)
 - Smart notifications at configurable thresholds (50%, 75%, 90%)
-- Claude API + local log file fallback
-- FSEvents-based file watching (near-zero CPU at idle)
-- Menu bar text customization (Short / Full / Percent / Icon Only / Custom)
+- All providers use their respective APIs (Anthropic, OpenAI, Kimi)
+- FSEvents-based file watching triggers faster refresh on activity (near-zero CPU at idle)
+- Rate-limit aware polling with configurable refresh interval (120s minimum)
+- Menu bar text customization (Short / Full / Percent / Icon Only / Custom template)
+- Standard and Mini themes
 - Light & Dark mode support
 - Launch at Login
+- Auto-update notifications
 
 ## Screenshots
 
-| Claude (Standard) | Codex (Standard) |
-|:---:|:---:|
-| ![Claude](docs/screenshots/panel-claude.png) | ![Codex](docs/screenshots/panel-codex.png) |
+| Claude (Standard) | Codex (Standard) | Kimi (Standard) |
+|:---:|:---:|:---:|
+| ![Claude](docs/screenshots/panel-claude.png) | ![Codex](docs/screenshots/panel-codex.png) | ![Kimi](docs/screenshots/panel-kimi.png) |
 
-| Claude (Mini) | Codex (Mini) |
-|:---:|:---:|
-| ![Claude Bars](docs/screenshots/panel-claude-bars.png) | ![Codex Bars](docs/screenshots/panel-codex-bars.png) |
+| Claude (Mini) | Codex (Mini) | Kimi (Mini) |
+|:---:|:---:|:---:|
+| ![Claude Bars](docs/screenshots/panel-claude-bars.png) | ![Codex Bars](docs/screenshots/panel-codex-bars.png) | ![Kimi Bars](docs/screenshots/panel-kimi-bars.png) |
 
-| Settings | Notifications |
+| Menu Bar (Short) | Menu Bar (Custom) |
 |:---:|:---:|
-| ![Settings](docs/screenshots/settings.png) | ![Notifications](docs/screenshots/notification.png) |
+| ![Menu Bar Short](docs/screenshots/menubar-short.png) | ![Menu Bar Custom](docs/screenshots/menubar-custom.png) |
+
+| Settings |
+|:---:|
+| ![Settings](docs/screenshots/settings.png) |
 
 ## Installation
 
@@ -84,18 +92,23 @@ Or download the latest `.zip` from [Releases](https://github.com/sushi-killer/AI
 
 ### Claude Code
 
-**Automatic** — AI Usage Bar reads credentials from the macOS Keychain, which are set by the Claude Code CLI. Just make sure Claude Code is installed and you have logged in at least once.
+**Automatic** — AI Usage Bar reads credentials from the macOS Keychain, which are set by Claude Code. Just make sure Claude Code is installed and you have logged in at least once. On first launch macOS may ask to allow Keychain access — click **Always Allow** so it won't ask again.
 
-### Codex CLI
+### Codex
 
-**Automatic** — reads your Codex credentials from `~/.codex/auth.json` and fetches usage via the OpenAI API, with local session logs (`~/.codex/sessions/`) as fallback. Just make sure Codex CLI is installed and you have logged in at least once.
+**Automatic** — reads your Codex credentials from `~/.codex/auth.json` and fetches usage via the OpenAI API. Just make sure Codex is installed and you have logged in at least once.
+
+### Kimi Code
+
+**API Key** — open Settings (gear icon) and paste your Kimi API key (`sk-kimi-...`). You can get one from the [Kimi Code Console](https://www.kimi.com/code/console). The key is stored in the macOS Keychain and read once per session.
 
 ## Configuration
 
 Open settings from the menu bar icon (gear button):
 
-- **Theme**: Standard (with usage ring) or Mini
-- **Menu bar format**: Short, Full, Percent, Icon Only, Custom template
+- **Providers**: enable/disable Claude, Codex, Kimi individually
+- **Menu bar**: choose which providers to display; format: Short, Full, Percent, Icon Only, Custom template
+- **Theme**: Standard (with usage ring) or Mini (bars only)
 - **Notifications**: per-threshold toggle with percentage picker (50%, 75%, 90%)
 - **Launch at Login**: start automatically on macOS login
 
@@ -104,22 +117,25 @@ Open settings from the menu bar icon (gear button):
 AI Usage Bar stores no data remotely and includes no analytics, telemetry, or tracking.
 
 - Claude usage is fetched from the official Anthropic API using your local Keychain credentials
-- Codex usage is fetched from the OpenAI API using your local Codex credentials (`~/.codex/auth.json`), with local session logs as fallback
-- Your credentials never leave your machine — they are read locally and sent only to the respective provider APIs (api.anthropic.com, chatgpt.com)
+- Codex usage is fetched from the OpenAI API using your local Codex credentials (`~/.codex/auth.json`)
+- Kimi usage is fetched from the Kimi API using your API key stored in the macOS Keychain
+- Your credentials never leave your machine — they are read locally and sent only to the respective provider APIs (api.anthropic.com, chatgpt.com, api.kimi.com)
 
 ## Requirements
 
 - macOS 13.0 Ventura or later
 - At least one of:
-  - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) — logged in at least once
-  - [Codex CLI](https://github.com/openai/codex) — used at least once
+  - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — logged in at least once
+  - [Codex](https://github.com/openai/codex) — logged in at least once
+  - [Kimi Code](https://www.kimi.com/code/console) — API key
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| Claude shows "Start using Claude to see usage" | Make sure Claude Code CLI is installed and you've logged in (`claude` in terminal) |
-| Codex shows no data | Make sure Codex CLI is installed and you've logged in (`codex` in terminal) |
+| Claude shows "Start using Claude to see usage" | Make sure Claude Code is installed and you've logged in (`claude` in terminal) |
+| Codex shows no data | Make sure Codex is installed and you've logged in (`codex` in terminal) |
+| Kimi shows no data | Check that your API key is entered in Settings (get one at [Kimi Code Console](https://www.kimi.com/code/console)) |
 | Keychain access dialog on every launch | Click **Always Allow** instead of **Allow** |
 | Menu bar icon not visible | Check System Settings → Control Center → menu bar overflow |
 | Notifications not appearing | System Settings → Notifications → AI Usage Bar → enable |

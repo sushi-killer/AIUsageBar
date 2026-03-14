@@ -4,7 +4,7 @@
 
 - macOS 13.0+
 - Xcode 15+ (Swift 5.9)
-- Claude Code CLI and/or Codex CLI (for testing)
+- Claude Code, Codex, and/or Kimi Code API key (for testing)
 
 ## Branch naming
 
@@ -82,7 +82,9 @@ chore: update deployment target to macOS 13.5
 ```
 AIUsageBar/
 ├── Models/          ← data types, enums (Provider, UsageData, Settings)
+├── Protocols/       ← shared protocols (UsageProvider)
 ├── Services/        ← singletons, actors, system integrations
+├── Resources/       ← Assets.xcassets, app icon, and other bundled resources
 ├── Views/           ← SwiftUI views only
 └── AIUsageBarApp.swift
 
@@ -94,6 +96,7 @@ release.sh           ← maintainer release script
 
 - New view → `Views/`
 - New provider or system service → `Services/`
+- New protocol → `Protocols/`
 - New data model → `Models/`
 - Test for `Foo.swift` → `FooTests.swift`
 

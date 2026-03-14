@@ -37,76 +37,29 @@ struct CodexWindow: Codable {
     }
 }
 
-// MARK: - Log Entry Models (fallback)
-
-struct CodexLogEntry: Codable {
-    let payload: Payload?
-    let timestamp: String?
-
-    struct Payload: Codable {
-        let type: String?
-        let rateLimits: RateLimits?
-
-        enum CodingKeys: String, CodingKey {
-            case type
-            case rateLimits = "rate_limits"
-        }
-    }
-
-    struct RateLimits: Codable {
-        let primary: RateLimitWindow?
-        let secondary: RateLimitWindow?
-    }
-
-    struct RateLimitWindow: Codable {
-        let usedPercent: Double?
-        let resetsAt: Int?
-
-        enum CodingKeys: String, CodingKey {
-            case usedPercent = "used_percent"
-            case resetsAt = "resets_at"
-        }
-    }
-}
-
 // MARK: - Provider
 
-actor CodexProvider {
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy/MM/dd"
-        return f
-    }()
-
+actor CodexProvider: UsageProvider {
     private let apiURL = URL(string: "https://chatgpt.com/backend-api/wham/usage")!
 
     /// Cached plan label with TTL
-    private var cachedPlanLabel: String?
-    private var planLabelCachedAt: Date?
-    private static let planLabelTTL: TimeInterval = 3600
+    private var planLabelCache = PlanLabelCache()
+
+    /// Session-level guard: once we've retried after a 401, don't retry again
+    /// until a successful response proves the credentials are valid.
+    private var hasRetriedAfterAuthError = false
 
     func fetchUsage() async -> UsageData? {
-        // Try API first
-        if let apiData = await fetchFromAPI() {
-            return apiData
-        }
-
-        // Fallback to local logs
-        return await fetchFromLogs()
+        return await fetchFromAPI(isRetry: false)
     }
 
     // MARK: - Plan Label
 
-    func getPlanLabel() -> String? {
-        if let cached = cachedPlanLabel,
-           let cachedAt = planLabelCachedAt,
-           Date().timeIntervalSince(cachedAt) < Self.planLabelTTL {
-            return cached
-        }
+    func getPlanLabel() async -> String? {
+        if let cached = planLabelCache.cached { return cached }
 
         guard let label = extractPlanTypeFromJWT() else { return nil }
-        cachedPlanLabel = label
-        planLabelCachedAt = Date()
+        planLabelCache.store(label)
         return label
     }
 
@@ -114,23 +67,40 @@ actor CodexProvider {
         let authPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".codex/auth.json").path
 
-        guard let data = FileManager.default.contents(atPath: authPath),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tokens = json["tokens"] as? [String: Any],
-              let idToken = tokens["id_token"] as? String else {
+        guard let data = FileManager.default.contents(atPath: authPath) else {
+            logger.debug("JWT parse failed: auth file not found at \(authPath)")
+            return nil
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            logger.warning("JWT parse failed: could not deserialize auth.json")
+            return nil
+        }
+        guard let tokens = json["tokens"] as? [String: Any] else {
+            logger.warning("JWT parse failed: missing 'tokens' key in auth.json")
+            return nil
+        }
+        guard let idToken = tokens["id_token"] as? String else {
+            logger.warning("JWT parse failed: missing 'id_token' in tokens")
             return nil
         }
 
         let parts = idToken.split(separator: ".")
-        guard parts.count >= 2 else { return nil }
+        guard parts.count >= 2 else {
+            logger.warning("JWT parse failed: token has \(parts.count) parts, expected >= 2")
+            return nil
+        }
 
         var base64 = String(parts[1])
         while base64.count % 4 != 0 {
             base64.append("=")
         }
 
-        guard let payloadData = Data(base64Encoded: base64),
-              let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] else {
+        guard let payloadData = Data(base64Encoded: base64) else {
+            logger.warning("JWT parse failed: base64 decoding of payload segment failed")
+            return nil
+        }
+        guard let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] else {
+            logger.warning("JWT parse failed: could not deserialize JWT payload as JSON")
             return nil
         }
 
@@ -139,16 +109,18 @@ actor CodexProvider {
             return planType.capitalized
         }
 
+        logger.debug("JWT parse: no 'chatgpt_plan_type' found in JWT auth claim")
         return nil
     }
 
     // MARK: - API
 
-    private func fetchFromAPI() async -> UsageData? {
+    private func fetchFromAPI(isRetry: Bool) async -> UsageData? {
         guard let auth = readAuth() else { return nil }
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
+        request.timeoutInterval = 15
         request.setValue("Bearer \(auth.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(auth.accountId, forHTTPHeaderField: "ChatGPT-Account-Id")
         request.setValue("AIUsageBar/1.0", forHTTPHeaderField: "User-Agent")
@@ -157,10 +129,29 @@ actor CodexProvider {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+            guard let httpResponse = response as? HTTPURLResponse else { return nil }
+
+            if httpResponse.statusCode == 429 {
+                let retryAfter = httpResponse.value(forHTTPHeaderField: "retry-after")
+                logger.info("Codex API rate limited (429), retry-after: \(retryAfter ?? "none")")
                 return nil
             }
+
+            if httpResponse.statusCode == 401 {
+                logger.warning("Codex API returned 401 (isRetry=\(isRetry))")
+                if !isRetry && !hasRetriedAfterAuthError {
+                    hasRetriedAfterAuthError = true
+                    return await fetchFromAPI(isRetry: true)
+                }
+                return nil
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                logger.warning("Codex API returned status \(httpResponse.statusCode)")
+                return nil
+            }
+
+            hasRetriedAfterAuthError = false
 
             let apiResponse = try JSONDecoder().decode(CodexUsageResponse.self, from: data)
             return buildFromAPI(apiResponse)
@@ -214,96 +205,4 @@ actor CodexProvider {
         )
     }
 
-    // MARK: - Fallback: Local Logs
-
-    private func fetchFromLogs() async -> UsageData? {
-        let logsPath = Provider.codex.logsPath
-        let fileManager = FileManager.default
-
-        guard fileManager.fileExists(atPath: logsPath) else { return nil }
-
-        for daysAgo in 0..<7 {
-            guard let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) else { continue }
-            let dayPath = (logsPath as NSString).appendingPathComponent(Self.dayFormatter.string(from: date))
-            if let usage = await fetchFromPath(dayPath) {
-                return usage
-            }
-        }
-
-        return nil
-    }
-
-    private func fetchFromPath(_ path: String) async -> UsageData? {
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: path) else { return nil }
-
-        do {
-            let files = try fileManager.contentsOfDirectory(atPath: path)
-            let rolloutFiles = files.filter { $0.hasPrefix("rollout-") && $0.hasSuffix(".jsonl") }
-                .sorted().reversed()
-
-            for file in rolloutFiles {
-                let filePath = (path as NSString).appendingPathComponent(file)
-                if let usage = await parseLogFile(at: filePath) {
-                    return usage
-                }
-            }
-        } catch {
-            logger.error("Error reading Codex logs: \(error)")
-        }
-
-        return nil
-    }
-
-    private func parseLogFile(at path: String) async -> UsageData? {
-        guard let data = FileManager.default.contents(atPath: path),
-              let content = String(data: data, encoding: .utf8) else {
-            return nil
-        }
-
-        let lines = content.components(separatedBy: .newlines).reversed()
-        let decoder = JSONDecoder()
-
-        for line in lines {
-            guard !line.isEmpty, let lineData = line.data(using: .utf8) else { continue }
-
-            do {
-                let entry = try decoder.decode(CodexLogEntry.self, from: lineData)
-                guard entry.payload?.type == "token_count",
-                      let rateLimits = entry.payload?.rateLimits else { continue }
-
-                return buildFromLogs(rateLimits)
-            } catch {
-                continue
-            }
-        }
-
-        return nil
-    }
-
-    private func buildFromLogs(_ rateLimits: CodexLogEntry.RateLimits) -> UsageData {
-        let now = Date()
-
-        func makeWindow(_ w: CodexLogEntry.RateLimitWindow) -> UsageWindow {
-            let resetDate = w.resetsAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
-            let isExpired = resetDate.map { $0 <= now } ?? false
-            return UsageWindow(
-                percentage: isExpired ? 0 : (w.usedPercent ?? 0),
-                resetTime: isExpired ? nil : resetDate,
-                isEstimated: false
-            )
-        }
-
-        let primary = rateLimits.primary.map { makeWindow($0) }
-            ?? UsageWindow(percentage: 0, isEstimated: true)
-        let secondary = rateLimits.secondary.map { makeWindow($0) }
-
-        return UsageData(
-            provider: .codex,
-            primaryWindow: primary,
-            secondaryWindow: secondary,
-            tokensUsed: nil,
-            dataSource: .local
-        )
-    }
 }

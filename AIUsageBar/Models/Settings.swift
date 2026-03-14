@@ -74,9 +74,9 @@ enum MenuBarFormat: String, CaseIterable {
 
     var preview: String {
         switch self {
-        case .short: return "C:45% X:30%"
-        case .full: return "Claude:45% Codex:30%"
-        case .percentOnly: return "45% 30%"
+        case .short: return "C:45% X:30% K:20%"
+        case .full: return "Claude:45% Codex:30% Kimi:20%"
+        case .percentOnly: return "45% 30% 20%"
         case .iconOnly: return "(icon only)"
         case .custom: return "(custom template)"
         }
@@ -103,32 +103,85 @@ final class AppSettings: ObservableObject {
     @AppStorage("threshold50Enabled") var threshold50Enabled: Bool = true
     @AppStorage("threshold75Enabled") var threshold75Enabled: Bool = true
     @AppStorage("threshold90Enabled") var threshold90Enabled: Bool = true
-    @AppStorage("threshold50Value") var threshold50Value: Int = 50
-    @AppStorage("threshold75Value") var threshold75Value: Int = 75
-    @AppStorage("threshold90Value") var threshold90Value: Int = 90
+    static let defaultWarningThreshold = 50
+    static let defaultHighThreshold = 75
+    static let defaultCriticalThreshold = 90
+
+    @AppStorage("threshold50Value") var threshold50Value: Int = AppSettings.defaultWarningThreshold
+    @AppStorage("threshold75Value") var threshold75Value: Int = AppSettings.defaultHighThreshold
+    @AppStorage("threshold90Value") var threshold90Value: Int = AppSettings.defaultCriticalThreshold
     @AppStorage("selectedProvider") var selectedProviderRaw: String = Provider.claude.rawValue
-    @AppStorage("refreshInterval") var refreshInterval: Double = 60.0
+    @AppStorage("refreshInterval") var refreshInterval: Double = 120.0
+
+    /// Hard floor: no provider may be polled more often than this.
+    /// Anthropic's usage endpoint triggers a permanent 429 loop at 30-60s intervals.
+    static let minimumRefreshInterval: TimeInterval = 120.0
     @AppStorage("cachedClaudePlanLabel") var cachedClaudePlanLabel: String = ""
     @AppStorage("cachedCodexPlanLabel") var cachedCodexPlanLabel: String = ""
+    @AppStorage("cachedKimiPlanLabel") var cachedKimiPlanLabel: String = ""
+    @AppStorage("providerEnabledClaude") var providerEnabledClaude: Bool = true
+    @AppStorage("providerEnabledCodex") var providerEnabledCodex: Bool = true
+    @AppStorage("providerEnabledKimi") var providerEnabledKimi: Bool = true
+    @AppStorage("menuBarShowClaude") var menuBarShowClaude: Bool = true
+    @AppStorage("menuBarShowCodex") var menuBarShowCodex: Bool = true
+    @AppStorage("menuBarShowKimi") var menuBarShowKimi: Bool = true
     @AppStorage("menuBarFormat") var menuBarFormatRaw: String = MenuBarFormat.short.rawValue
-    @AppStorage("customMenuBarFormat") var customMenuBarFormat: String = "C:{c}% X:{x}%"
+    @AppStorage("customMenuBarFormat") var customMenuBarFormat: String = "C:{c}% X:{x}% K:{k}%"
+
+    static let kimiKeychainService = "Kimi-apikey"
+
+    var kimiAPIKey: String {
+        get { KeychainService.shared.getAPIKey(forService: Self.kimiKeychainService) ?? "" }
+        set {
+            KeychainService.shared.storeAPIKey(newValue, forService: Self.kimiKeychainService)
+            objectWillChange.send()
+        }
+    }
 
     var menuBarFormat: MenuBarFormat {
         get { MenuBarFormat(rawValue: menuBarFormatRaw) ?? .short }
         set { menuBarFormatRaw = newValue.rawValue }
     }
 
-    func formatCustomTemplate(claude: Int?, codex: Int?) -> String {
+    func formatCustomTemplate(claude: Int?, codex: Int?, kimi: Int? = nil) -> String {
         var result = customMenuBarFormat
         result = result.replacingOccurrences(of: "{c}", with: claude.map { "\($0)" } ?? "-")
         result = result.replacingOccurrences(of: "{x}", with: codex.map { "\($0)" } ?? "-")
+        result = result.replacingOccurrences(of: "{k}", with: kimi.map { "\($0)" } ?? "-")
         result = result.replacingOccurrences(of: "{claude}", with: "Claude")
         result = result.replacingOccurrences(of: "{codex}", with: "Codex")
+        result = result.replacingOccurrences(of: "{kimi}", with: "Kimi")
         // Clean up multiple consecutive spaces
-        while result.contains("  ") {
-            result = result.replacingOccurrences(of: "  ", with: " ")
-        }
+        result = result.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.joined(separator: " ")
         return result.trimmingCharacters(in: .whitespaces)
+    }
+
+    func isProviderEnabled(_ provider: Provider) -> Bool {
+        switch provider {
+        case .claude: return providerEnabledClaude
+        case .codex: return providerEnabledCodex
+        case .kimi: return providerEnabledKimi
+        }
+    }
+
+    var enabledProviders: [Provider] {
+        Provider.allCases.filter { isProviderEnabled($0) }
+    }
+
+    func isMenuBarVisible(_ provider: Provider) -> Bool {
+        guard isProviderEnabled(provider) else { return false }
+        switch provider {
+        case .claude: return menuBarShowClaude
+        case .codex: return menuBarShowCodex
+        case .kimi: return menuBarShowKimi
+        }
+    }
+
+    /// If the currently selected provider was disabled, switch to the first enabled one
+    func ensureSelectedProviderEnabled() {
+        if !isProviderEnabled(selectedProvider), let first = enabledProviders.first {
+            selectedProvider = first
+        }
     }
 
     var selectedProvider: Provider {
@@ -146,6 +199,22 @@ final class AppSettings: ObservableObject {
 
     /// Available percentage options for threshold pickers
     static let thresholdOptions: [Int] = Array(stride(from: 10, through: 100, by: 5))
+
+    func cachedPlanLabel(for provider: Provider) -> String {
+        switch provider {
+        case .claude: return cachedClaudePlanLabel
+        case .codex: return cachedCodexPlanLabel
+        case .kimi: return cachedKimiPlanLabel
+        }
+    }
+
+    func setCachedPlanLabel(_ label: String, for provider: Provider) {
+        switch provider {
+        case .claude: cachedClaudePlanLabel = label
+        case .codex: cachedCodexPlanLabel = label
+        case .kimi: cachedKimiPlanLabel = label
+        }
+    }
 
     private init() {}
 

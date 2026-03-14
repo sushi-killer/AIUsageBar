@@ -23,34 +23,6 @@ struct UsageWindowResponse: Codable {
     }
 }
 
-struct ClaudeLogEntry: Codable {
-    let message: MessageContent?
-    let timestamp: String?
-
-    struct MessageContent: Codable {
-        let usage: TokenUsage?
-    }
-
-    struct TokenUsage: Codable {
-        let inputTokens: Int?
-        let outputTokens: Int?
-        let cacheCreationInputTokens: Int?
-        let cacheReadInputTokens: Int?
-
-        enum CodingKeys: String, CodingKey {
-            case inputTokens = "input_tokens"
-            case outputTokens = "output_tokens"
-            case cacheCreationInputTokens = "cache_creation_input_tokens"
-            case cacheReadInputTokens = "cache_read_input_tokens"
-        }
-
-        var totalTokens: Int {
-            (inputTokens ?? 0) + (outputTokens ?? 0) +
-            (cacheCreationInputTokens ?? 0) + (cacheReadInputTokens ?? 0)
-        }
-    }
-}
-
 struct ClaudeProfileResponse: Codable {
     let organization: ClaudeOrganization?
 }
@@ -65,7 +37,10 @@ struct ClaudeOrganization: Codable {
     }
 }
 
-actor ClaudeProvider {
+actor ClaudeProvider: UsageProvider {
+    private static let oauthBetaVersion = "oauth-2025-04-20"
+    private static let userAgentValue = "claude-code/2.0.32"
+
     private let apiURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
     private let profileURL = URL(string: "https://api.anthropic.com/api/oauth/profile")!
     private let keychainService = KeychainService.shared
@@ -75,9 +50,7 @@ actor ClaudeProvider {
     private var hasRetriedAfterAuthError = false
 
     /// Cached plan label so we don't hit the profile API every refresh
-    private var cachedPlanLabel: String?
-    private var planLabelCachedAt: Date?
-    private static let planLabelTTL: TimeInterval = 3600
+    private var planLabelCache = PlanLabelCache()
 
     private static let iso8601WithFractional: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
@@ -92,20 +65,17 @@ actor ClaudeProvider {
     }()
 
     func getPlanLabel() async -> String? {
-        if let cached = cachedPlanLabel,
-           let cachedAt = planLabelCachedAt,
-           Date().timeIntervalSince(cachedAt) < Self.planLabelTTL {
-            return cached
-        }
+        if let cached = planLabelCache.cached { return cached }
 
         guard let credentials = await keychainService.getClaudeCredentials() else { return nil }
 
         var request = URLRequest(url: profileURL)
         request.httpMethod = "GET"
+        request.timeoutInterval = 15
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-        request.setValue("claude-code/2.0.32", forHTTPHeaderField: "User-Agent")
+        request.setValue(Self.oauthBetaVersion, forHTTPHeaderField: "anthropic-beta")
+        request.setValue(Self.userAgentValue, forHTTPHeaderField: "User-Agent")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -116,8 +86,7 @@ actor ClaudeProvider {
 
             if let tier = profile.organization?.rateLimitTier {
                 let label = parseTierLabel(tier)
-                cachedPlanLabel = label
-                planLabelCachedAt = Date()
+                planLabelCache.store(label)
                 return label
             }
         } catch {
@@ -136,16 +105,6 @@ actor ClaudeProvider {
     }
 
     func fetchUsage() async -> UsageData? {
-        // Try API first
-        if let apiData = await fetchFromAPI() {
-            return apiData
-        }
-
-        // Fallback to local logs
-        return await fetchFromLogs()
-    }
-
-    private func fetchFromAPI() async -> UsageData? {
         return await performAPIRequest(isRetry: false)
     }
 
@@ -156,15 +115,22 @@ actor ClaudeProvider {
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
+        request.timeoutInterval = 15
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-        request.setValue("claude-code/2.0.32", forHTTPHeaderField: "User-Agent")
+        request.setValue(Self.oauthBetaVersion, forHTTPHeaderField: "anthropic-beta")
+        request.setValue(Self.userAgentValue, forHTTPHeaderField: "User-Agent")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                return nil
+            }
+
+            if httpResponse.statusCode == 429 {
+                let retryAfter = httpResponse.value(forHTTPHeaderField: "retry-after")
+                logger.info("Claude API rate limited (429), retry-after: \(retryAfter ?? "none")")
                 return nil
             }
 
@@ -185,10 +151,6 @@ actor ClaudeProvider {
 
             hasRetriedAfterAuthError = false
 
-            if let jsonString = String(data: data, encoding: .utf8) {
-                logger.debug("Claude API raw response: \(jsonString)")
-            }
-
             let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
             return convertAPIResponse(apiResponse)
         } catch {
@@ -204,7 +166,7 @@ actor ClaudeProvider {
 
     func convertAPIResponse(_ response: ClaudeAPIResponse) -> UsageData? {
         guard let fiveHour = response.fiveHour else {
-            logger.info("API response missing five_hour window, falling back to logs")
+            logger.info("API response missing five_hour window")
             return nil
         }
 
@@ -234,103 +196,4 @@ actor ClaudeProvider {
         )
     }
 
-    private func fetchFromLogs() async -> UsageData? {
-        let logsPath = Provider.claude.logsPath
-        let fileManager = FileManager.default
-
-        guard fileManager.fileExists(atPath: logsPath) else {
-            return nil
-        }
-
-        var totalTokens = 0
-        let fiveHoursAgo = Date().addingTimeInterval(-5 * 3600)
-
-        do {
-            let projectDirs = try fileManager.contentsOfDirectory(atPath: logsPath)
-
-            for projectDir in projectDirs {
-                let projectPath = (logsPath as NSString).appendingPathComponent(projectDir)
-                var isDirectory: ObjCBool = false
-
-                guard fileManager.fileExists(atPath: projectPath, isDirectory: &isDirectory),
-                      isDirectory.boolValue else {
-                    continue
-                }
-
-                let files = try fileManager.contentsOfDirectory(atPath: projectPath)
-                let jsonlFiles = files.filter { $0.hasSuffix(".jsonl") }
-
-                for file in jsonlFiles {
-                    let filePath = (projectPath as NSString).appendingPathComponent(file)
-                    totalTokens += await parseLogFile(at: filePath, since: fiveHoursAgo)
-                }
-            }
-        } catch {
-            logger.error("Error reading Claude logs: \(error)")
-            return nil
-        }
-
-        guard totalTokens > 0 else {
-            return nil
-        }
-
-        // Estimate percentage based on a typical limit (rough estimation)
-        let estimatedLimit = 1_000_000 // Typical 5-hour token limit
-        let percentage = min(Double(totalTokens) / Double(estimatedLimit) * 100, 100)
-
-        let primaryWindow = UsageWindow(
-            percentage: percentage,
-            resetTime: Date().addingTimeInterval(5 * 3600),
-            isEstimated: true
-        )
-
-        return UsageData(
-            provider: .claude,
-            primaryWindow: primaryWindow,
-            secondaryWindow: nil,
-            tokensUsed: nil,
-            dataSource: .local
-        )
-    }
-
-    private func parseLogFile(at path: String, since: Date) async -> Int {
-        guard let data = FileManager.default.contents(atPath: path),
-              let content = String(data: data, encoding: .utf8) else {
-            return 0
-        }
-
-        var totalTokens = 0
-        let lines = content.components(separatedBy: .newlines)
-        let decoder = JSONDecoder()
-
-        for line in lines {
-            guard !line.isEmpty,
-                  let lineData = line.data(using: .utf8) else {
-                continue
-            }
-
-            do {
-                let entry = try decoder.decode(ClaudeLogEntry.self, from: lineData)
-
-                // Skip entries without timestamp — can't determine if they're in the window
-                guard let timestampStr = entry.timestamp else {
-                    continue
-                }
-
-                if let timestamp = Self.iso8601Standard.date(from: timestampStr)
-                    ?? Self.iso8601WithFractional.date(from: timestampStr),
-                   timestamp < since {
-                    continue
-                }
-
-                if let usage = entry.message?.usage {
-                    totalTokens += usage.totalTokens
-                }
-            } catch {
-                continue
-            }
-        }
-
-        return totalTokens
-    }
 }

@@ -2,10 +2,11 @@ import SwiftUI
 
 struct ProviderTabs: View {
     @Binding var selectedProvider: Provider
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(Provider.allCases) { provider in
+            ForEach(settings.enabledProviders) { provider in
                 ProviderTab(
                     provider: provider,
                     isSelected: selectedProvider == provider

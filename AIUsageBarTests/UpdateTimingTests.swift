@@ -108,11 +108,11 @@ final class UpdateTimingTests: XCTestCase {
             provider: .claude,
             primaryWindow: primaryWindow,
             tokensUsed: 450000,
-            dataSource: .local
+            dataSource: .api
         )
 
-        XCTAssertEqual(usageData.dataSource, .local,
-                      "Local data should have .local data source")
+        XCTAssertEqual(usageData.dataSource, .api,
+                      "Data should have .api data source")
     }
 
     // MARK: - Data Freshness Tests

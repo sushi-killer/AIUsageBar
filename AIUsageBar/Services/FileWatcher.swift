@@ -40,7 +40,7 @@ final class FileWatcher {
             observerRegistered = true
         }
 
-        for provider in Provider.allCases {
+        for provider in Provider.allCases where provider.hasLocalLogs {
             startWatching(provider: provider)
         }
     }
@@ -71,7 +71,7 @@ final class FileWatcher {
     }
 
     private func startWatching(provider: Provider) {
-        let path = provider.logsPath
+        guard let path = provider.logsPath else { return }
         let fileManager = FileManager.default
 
         // Create directory if it doesn't exist

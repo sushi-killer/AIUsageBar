@@ -8,6 +8,8 @@ struct SettingsView: View {
 
     @State private var hasClaudeCredentials = false
     @State private var hasCodexLogs = false
+    @State private var hasKimiKey = false
+    @State private var kimiAPIKeyField = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -45,9 +47,60 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            // Providers
+            GroupBox {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Toggle("Claude", isOn: $settings.providerEnabledClaude)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(settings.enabledProviders.count == 1 && settings.providerEnabledClaude)
+                        Toggle("Codex", isOn: $settings.providerEnabledCodex)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(settings.enabledProviders.count == 1 && settings.providerEnabledCodex)
+                        Toggle("Kimi", isOn: $settings.providerEnabledKimi)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(settings.enabledProviders.count == 1 && settings.providerEnabledKimi)
+                    }
+                    .onChange(of: settings.providerEnabledClaude) { val in
+                        settings.menuBarShowClaude = val
+                        settings.ensureSelectedProviderEnabled()
+                    }
+                    .onChange(of: settings.providerEnabledCodex) { val in
+                        settings.menuBarShowCodex = val
+                        settings.ensureSelectedProviderEnabled()
+                    }
+                    .onChange(of: settings.providerEnabledKimi) { val in
+                        settings.menuBarShowKimi = val
+                        settings.ensureSelectedProviderEnabled()
+                    }
+                }
+            } label: {
+                Text("Providers")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
             // Menu Bar Format
             GroupBox {
                 VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Toggle("Claude", isOn: $settings.menuBarShowClaude)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(!settings.providerEnabledClaude)
+                        Toggle("Codex", isOn: $settings.menuBarShowCodex)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(!settings.providerEnabledCodex)
+                        Toggle("Kimi", isOn: $settings.menuBarShowKimi)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .disabled(!settings.providerEnabledKimi)
+}
+
                     Picker("Format", selection: Binding(
                         get: { settings.menuBarFormat },
                         set: { settings.menuBarFormat = $0 }
@@ -63,11 +116,11 @@ struct SettingsView: View {
                             .textFieldStyle(.roundedBorder)
                             .font(.caption.monospaced())
 
-                        Text("Placeholders: {c} {x} {claude} {codex}")
+                        Text("Placeholders: {c} {x} {k} {claude} {codex} {kimi}")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
 
-                        Text(settings.formatCustomTemplate(claude: 45, codex: 30))
+                        Text(settings.formatCustomTemplate(claude: 45, codex: 30, kimi: 20))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 6)
@@ -92,24 +145,42 @@ struct SettingsView: View {
 
             // Provider Status
             GroupBox {
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 6))
-                            .foregroundStyle(hasClaudeCredentials ? .green : .red)
-                        Text("Claude")
-                            .font(.caption)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 6))
+                                .foregroundStyle(hasClaudeCredentials ? .green : .red)
+                            Text("Claude")
+                                .font(.caption)
+                        }
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 6))
+                                .foregroundStyle(hasCodexLogs ? .green : .red)
+                            Text("Codex")
+                                .font(.caption)
+                        }
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 6))
+                                .foregroundStyle(hasKimiKey ? .green : .red)
+                            Text("Kimi")
+                                .font(.caption)
+                        }
+
+                        Spacer()
                     }
 
-                    HStack(spacing: 4) {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 6))
-                            .foregroundStyle(hasCodexLogs ? .green : .red)
-                        Text("Codex")
-                            .font(.caption)
-                    }
-
-                    Spacer()
+                    SecureField("Kimi API Key (sk-...)", text: $kimiAPIKeyField)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.caption)
+                        .onChange(of: kimiAPIKeyField) { _ in
+                            settings.kimiAPIKey = kimiAPIKeyField
+                            hasKimiKey = kimiAPIKeyField.hasPrefix("sk-")
+                        }
                 }
             } label: {
                 Text("Provider Status")
@@ -209,7 +280,9 @@ struct SettingsView: View {
         .frame(width: 320)
         .onAppear {
             hasClaudeCredentials = KeychainService.shared.hasClaudeCredentials
-            hasCodexLogs = FileManager.default.fileExists(atPath: Provider.codex.logsPath)
+            hasCodexLogs = Provider.codex.logsPath.map { FileManager.default.fileExists(atPath: $0) } ?? false
+            kimiAPIKeyField = settings.kimiAPIKey
+            hasKimiKey = kimiAPIKeyField.hasPrefix("sk-")
             Task {
                 await notificationService.checkAuthorization()
             }

@@ -131,8 +131,8 @@ final class ProviderSwitchingTests: XCTestCase {
     func testAllProvidersAreAvailableForSwitching() {
         let providers = Provider.allCases
         XCTAssertEqual(
-            providers.count, 2,
-            "There should be exactly 2 providers available for switching"
+            providers.count, 3,
+            "There should be exactly 3 providers available for switching"
         )
     }
 

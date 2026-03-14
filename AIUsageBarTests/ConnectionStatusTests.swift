@@ -70,15 +70,15 @@ final class ConnectionStatusTests: XCTestCase {
     func testCodexLogsPathIsValid() {
         let logsPath = Provider.codex.logsPath
 
-        XCTAssertFalse(logsPath.isEmpty, "Codex logs path should not be empty")
-        XCTAssertTrue(logsPath.contains("codex"), "Codex logs path should contain 'codex'")
+        XCTAssertNotNil(logsPath, "Codex logs path should not be nil")
+        XCTAssertTrue(logsPath!.contains("codex"), "Codex logs path should contain 'codex'")
     }
 
     func testClaudeLogsPathIsValid() {
         let logsPath = Provider.claude.logsPath
 
-        XCTAssertFalse(logsPath.isEmpty, "Claude logs path should not be empty")
-        XCTAssertTrue(logsPath.contains("claude"), "Claude logs path should contain 'claude'")
+        XCTAssertNotNil(logsPath, "Claude logs path should not be nil")
+        XCTAssertTrue(logsPath!.contains("claude"), "Claude logs path should contain 'claude'")
     }
 
     // MARK: - KeychainService hasClaudeCredentials Property Tests

@@ -9,10 +9,6 @@ final class DataSourceBadgeTests: XCTestCase {
         XCTAssertEqual(DataSource.api.rawValue, "api")
     }
 
-    func testDataSourceLocalRawValue() {
-        XCTAssertEqual(DataSource.local.rawValue, "local")
-    }
-
     // MARK: - DataSource Indicator Requirement Tests
 
     func testUsageDataWithAPISourceIndicatesAPIOrigin() {
@@ -26,29 +22,17 @@ final class DataSourceBadgeTests: XCTestCase {
         XCTAssertEqual(usage.dataSource, .api, "API data should be marked with .api source")
     }
 
-    func testUsageDataWithLocalSourceIndicatesLocalOrigin() {
-        // Acceptance Criteria: User sees "Local" indicator showing data source
-        let usage = UsageData(
-            provider: .claude,
-            primaryWindow: UsageWindow(percentage: 50),
-            dataSource: .local
-        )
-
-        XCTAssertEqual(usage.dataSource, .local, "Local data should be marked with .local source")
-    }
-
-    func testEmptyUsageDataDefaultsToLocalSource() {
-        // When no API data is available, local is the default
+    func testEmptyUsageDataDefaultsToAPISource() {
+        // Empty usage data defaults to API source
         let empty = UsageData.empty(for: .claude)
 
-        XCTAssertEqual(empty.dataSource, .local, "Empty usage data should default to local source")
+        XCTAssertEqual(empty.dataSource, .api, "Empty usage data should default to api source")
     }
 
-    func testEmptyCodexUsageDataDefaultsToLocalSource() {
-        // Codex only uses local logs, never API
+    func testEmptyCodexUsageDataDefaultsToAPISource() {
         let empty = UsageData.empty(for: .codex)
 
-        XCTAssertEqual(empty.dataSource, .local, "Codex usage data should always be local source")
+        XCTAssertEqual(empty.dataSource, .api, "Codex usage data should default to api source")
     }
 
     // MARK: - DataSource Badge Text Validation Tests
@@ -56,17 +40,9 @@ final class DataSourceBadgeTests: XCTestCase {
     func testAPISourceDisplayText() {
         // The badge displays "API" for API data source
         let source = DataSource.api
-        let displayText = source == .api ? "API" : "Local"
+        let displayText = source == .api ? "API" : "Unknown"
 
         XCTAssertEqual(displayText, "API")
-    }
-
-    func testLocalSourceDisplayText() {
-        // The badge displays "Local" for local data source
-        let source = DataSource.local
-        let displayText = source == .api ? "API" : "Local"
-
-        XCTAssertEqual(displayText, "Local")
     }
 
     // MARK: - DataSource Badge Color Tests
@@ -77,14 +53,6 @@ final class DataSourceBadgeTests: XCTestCase {
         let usesGreen = source == .api
 
         XCTAssertTrue(usesGreen, "API source badge should use green color")
-    }
-
-    func testLocalSourceBadgeUsesOrangeColor() {
-        // Local source badge should use orange color
-        let source = DataSource.local
-        let usesOrange = source == .local
-
-        XCTAssertTrue(usesOrange, "Local source badge should use orange color")
     }
 
     // MARK: - DataSource in UsageData Integration Tests
@@ -105,24 +73,6 @@ final class DataSourceBadgeTests: XCTestCase {
 
         // Then: Data source is preserved
         XCTAssertEqual(decoded.dataSource, .api)
-    }
-
-    func testUsageDataPreservesLocalSourceThroughCodable() throws {
-        // Given: Usage data with local source
-        let usage = UsageData(
-            provider: .codex,
-            primaryWindow: UsageWindow(percentage: 30),
-            dataSource: .local
-        )
-
-        // When: Encoded and decoded
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-        let data = try encoder.encode(usage)
-        let decoded = try decoder.decode(UsageData.self, from: data)
-
-        // Then: Data source is preserved
-        XCTAssertEqual(decoded.dataSource, .local)
     }
 
     // MARK: - DataSourceBadge Visibility Tests
@@ -167,27 +117,14 @@ final class DataSourceBadgeTests: XCTestCase {
         XCTAssertEqual(usage.dataSource, .api)
     }
 
-    func testClaudeCanHaveLocalDataSource() {
-        // Claude can fallback to local logs
-        let usage = UsageData(
-            provider: .claude,
-            primaryWindow: UsageWindow(percentage: 50),
-            dataSource: .local
-        )
-
-        XCTAssertEqual(usage.provider, .claude)
-        XCTAssertEqual(usage.dataSource, .local)
-    }
-
-    func testCodexUsesLocalDataSource() {
-        // Codex only uses local log parsing
+    func testCodexUsesAPIDataSource() {
         let usage = UsageData(
             provider: .codex,
             primaryWindow: UsageWindow(percentage: 50),
-            dataSource: .local
+            dataSource: .api
         )
 
         XCTAssertEqual(usage.provider, .codex)
-        XCTAssertEqual(usage.dataSource, .local)
+        XCTAssertEqual(usage.dataSource, .api)
     }
 }
