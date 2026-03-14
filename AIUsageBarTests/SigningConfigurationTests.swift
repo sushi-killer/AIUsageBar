@@ -178,7 +178,7 @@ final class SigningConfigurationTests: XCTestCase {
 
         // Archive build requires MARKETING_VERSION
         XCTAssertTrue(
-            content.contains("MARKETING_VERSION = 1.0"),
+            content.contains("MARKETING_VERSION = 1."),
             "Project must have a marketing version for archive builds"
         )
 

@@ -48,6 +48,8 @@ actor CodexProvider: UsageProvider {
     /// Session-level guard: once we've retried after a 401, don't retry again
     /// until a successful response proves the credentials are valid.
     private var hasRetriedAfterAuthError = false
+    private var lastAuthRetryDate: Date?
+    private static let authRetryCooldown: TimeInterval = 300
 
     func fetchUsage() async -> UsageData? {
         return await fetchFromAPI(isRetry: false)
@@ -139,8 +141,15 @@ actor CodexProvider: UsageProvider {
 
             if httpResponse.statusCode == 401 {
                 logger.warning("Codex API returned 401 (isRetry=\(isRetry))")
+                if hasRetriedAfterAuthError,
+                   let lastRetry = lastAuthRetryDate,
+                   Date().timeIntervalSince(lastRetry) >= Self.authRetryCooldown {
+                    logger.info("Auth retry cooldown elapsed, allowing fresh retry")
+                    hasRetriedAfterAuthError = false
+                }
                 if !isRetry && !hasRetriedAfterAuthError {
                     hasRetriedAfterAuthError = true
+                    lastAuthRetryDate = Date()
                     return await fetchFromAPI(isRetry: true)
                 }
                 return nil

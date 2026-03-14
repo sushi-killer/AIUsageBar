@@ -374,22 +374,35 @@ enum TestableKeychainService {
     static let serviceName = "Claude Code-credentials"
 
     static func parseCredentials(from json: [String: Any]) -> ClaudeCredentials? {
-        // Try to get claudeAiOauth.accessToken
-        if let claudeAiOauth = json["claudeAiOauth"] as? [String: Any],
-           let accessToken = claudeAiOauth["accessToken"] as? String,
-           !accessToken.trimmingCharacters(in: .whitespaces).isEmpty {
-            let subscriptionType = json["subscriptionType"] as? String
-            return ClaudeCredentials(accessToken: accessToken, subscriptionType: subscriptionType)
+        // Claude Code wraps credentials under "claudeAiOauth"; fall back to top-level
+        let oauthJson = (json["claudeAiOauth"] as? [String: Any]) ?? json
+
+        guard let accessToken = (oauthJson["accessToken"] as? String
+                                 ?? oauthJson["access_token"] as? String),
+              !accessToken.trimmingCharacters(in: .whitespaces).isEmpty else {
+            // If claudeAiOauth had empty token, try direct fallback
+            if json["claudeAiOauth"] != nil,
+               let directToken = json["accessToken"] as? String,
+               !directToken.trimmingCharacters(in: .whitespaces).isEmpty {
+                let subscriptionType = json["subscriptionType"] as? String
+                return ClaudeCredentials(accessToken: directToken, subscriptionType: subscriptionType)
+            }
+            return nil
         }
 
-        // Fallback: try direct accessToken field
-        if let accessToken = json["accessToken"] as? String,
-           !accessToken.trimmingCharacters(in: .whitespaces).isEmpty {
-            let subscriptionType = json["subscriptionType"] as? String
-            return ClaudeCredentials(accessToken: accessToken, subscriptionType: subscriptionType)
-        }
+        let subscriptionType = oauthJson["subscriptionType"] as? String
+            ?? json["subscriptionType"] as? String
+        let refreshToken = oauthJson["refreshToken"] as? String
+            ?? oauthJson["refresh_token"] as? String
+        let expiresAt = oauthJson["expiresAt"] as? Int64
+            ?? oauthJson["expires_at"] as? Int64
 
-        return nil
+        return ClaudeCredentials(
+            accessToken: accessToken,
+            subscriptionType: subscriptionType,
+            refreshToken: refreshToken,
+            expiresAt: expiresAt
+        )
     }
 
     static func parseCredentials(from data: Data) -> ClaudeCredentials? {
