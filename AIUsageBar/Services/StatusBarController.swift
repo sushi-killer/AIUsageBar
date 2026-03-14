@@ -67,15 +67,14 @@ final class StatusBarController: NSObject, ObservableObject {
     }
 
     private func setupSubscriptions() {
-        UsageManager.shared.$claudeUsage
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.updateButtonAppearance() }
-            .store(in: &cancellables)
-
-        UsageManager.shared.$codexUsage
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.updateButtonAppearance() }
-            .store(in: &cancellables)
+        Publishers.MergeMany(
+            UsageManager.shared.$claudeUsage.map { _ in () }.eraseToAnyPublisher(),
+            UsageManager.shared.$codexUsage.map { _ in () }.eraseToAnyPublisher(),
+            UsageManager.shared.$kimiUsage.map { _ in () }.eraseToAnyPublisher()
+        )
+        .receive(on: RunLoop.main)
+        .sink { [weak self] in self?.updateButtonAppearance() }
+        .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: RunLoop.main)
@@ -202,39 +201,26 @@ final class StatusBarController: NSObject, ObservableObject {
         guard let button = statusItem.button else { return }
 
         let settings = AppSettings.shared
-        let claudeUsage = UsageManager.shared.claudeUsage
-        let codexUsage = UsageManager.shared.codexUsage
+        let claudeUsage = settings.menuBarShowClaude ? UsageManager.shared.claudeUsage : nil
+        let codexUsage = settings.menuBarShowCodex ? UsageManager.shared.codexUsage : nil
+        let kimiUsage = settings.menuBarShowKimi ? UsageManager.shared.kimiUsage : nil
         let format = settings.menuBarFormat
 
-        // Icon tinting based on worst status
-        let statuses = [claudeUsage?.status, codexUsage?.status].compactMap { $0 }
-        let worstStatus: UsageStatus? = {
-            if statuses.contains(.red) { return .red }
-            if statuses.contains(.yellow) { return .yellow }
-            if statuses.contains(.green) { return .green }
-            return nil
-        }()
+        let statuses = [claudeUsage?.status, codexUsage?.status, kimiUsage?.status].compactMap { $0 }
+        button.image = tintedIcon(for: statuses)
 
-        let image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "AI Usage")
-        if let status = worstStatus, status != .green {
-            let config = NSImage.SymbolConfiguration(paletteColors: [NSColor(status.color)])
-            button.image = image?.withSymbolConfiguration(config)
-        } else {
-            button.image = image
-        }
-
-        // Text formatting
         let claudePct = claudeUsage.map { Int($0.displayPercentage) }
         let codexPct = codexUsage.map { Int($0.displayPercentage) }
+        let kimiPct = kimiUsage.map { Int($0.displayPercentage) }
 
         let title: String? = {
             switch format {
             case .iconOnly:
                 return nil
             case .custom:
-                return settings.formatCustomTemplate(claude: claudePct, codex: codexPct)
+                return settings.formatCustomTemplate(claude: claudePct, codex: codexPct, kimi: kimiPct)
             case .short, .full, .percentOnly:
-                return formatBuiltIn(format: format, claude: claudePct, codex: codexPct)
+                return formatBuiltIn(format: format, claude: claudePct, codex: codexPct, kimi: kimiPct)
             }
         }()
 
@@ -242,30 +228,37 @@ final class StatusBarController: NSObject, ObservableObject {
         button.imagePosition = title != nil ? .imageLeading : .imageOnly
     }
 
-    private func formatBuiltIn(format: MenuBarFormat, claude: Int?, codex: Int?) -> String? {
-        switch (claude, codex) {
-        case let (c?, x?):
-            switch format {
-            case .short: return "C:\(c)% X:\(x)%"
-            case .full: return "Claude:\(c)% Codex:\(x)%"
-            case .percentOnly: return "\(c)% \(x)%"
-            default: return nil
-            }
-        case let (c?, nil):
-            switch format {
-            case .short: return "C:\(c)%"
-            case .full: return "Claude:\(c)%"
-            case .percentOnly: return "\(c)%"
-            default: return nil
-            }
-        case let (nil, x?):
-            switch format {
-            case .short: return "X:\(x)%"
-            case .full: return "Codex:\(x)%"
-            case .percentOnly: return "\(x)%"
-            default: return nil
-            }
-        case (nil, nil):
+    private func tintedIcon(for statuses: [UsageStatus]) -> NSImage? {
+        let image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "AI Usage")
+        let worst: UsageStatus? = {
+            if statuses.contains(.red) { return .red }
+            if statuses.contains(.yellow) { return .yellow }
+            if statuses.contains(.green) { return .green }
+            return nil
+        }()
+        guard let worst, worst != .green else { return image }
+        let config = NSImage.SymbolConfiguration(paletteColors: [NSColor(worst.color)])
+        return image?.withSymbolConfiguration(config)
+    }
+
+    private func formatBuiltIn(format: MenuBarFormat, claude: Int?, codex: Int?, kimi: Int?) -> String? {
+        let providers: [(short: String, full: String, value: Int?)] = [
+            ("C", "Claude", claude),
+            ("X", "Codex", codex),
+            ("K", "Kimi", kimi),
+        ]
+
+        let available = providers.compactMap { p in p.value.map { (p.short, p.full, $0) } }
+        guard !available.isEmpty else { return nil }
+
+        switch format {
+        case .short:
+            return available.map { "\($0.0):\($0.2)%" }.joined(separator: " ")
+        case .full:
+            return available.map { "\($0.1):\($0.2)%" }.joined(separator: " ")
+        case .percentOnly:
+            return available.map { "\($0.2)%" }.joined(separator: " ")
+        default:
             return nil
         }
     }

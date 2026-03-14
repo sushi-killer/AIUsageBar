@@ -7,17 +7,25 @@ final class UsageManager: ObservableObject {
 
     @Published private(set) var claudeUsage: UsageData?
     @Published private(set) var codexUsage: UsageData?
+    @Published private(set) var kimiUsage: UsageData?
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var lastError: String?
     @Published private(set) var availableUpdate: UpdateChecker.Release?
 
     private let claudeProvider = ClaudeProvider()
     private let codexProvider = CodexProvider()
+    private let kimiProvider = KimiProvider()
     private let updateChecker = UpdateChecker()
     private var lastNotifiedVersion: String?
     private var fileWatcher: FileWatcher?
     private var refreshTimer: Timer?
     private var refreshTask: Task<Void, Never>?
+
+    // Last-good cache: keeps UI populated when a fetch returns nil (e.g. 429)
+    private var lastGoodClaude: UsageData?
+    private var lastGoodCodex: UsageData?
+    private var lastGoodKimi: UsageData?
+    private var lastRefreshTime: [Provider: Date] = [:]
 
     private init() {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
@@ -29,7 +37,17 @@ final class UsageManager: ObservableObject {
         switch provider {
         case .claude: return claudeUsage
         case .codex: return codexUsage
+        case .kimi: return kimiUsage
         }
+    }
+
+    var hasRecentData: Bool {
+        let settings = AppSettings.shared
+        let interval = settings.refreshInterval
+        let now = Date()
+        let usages = settings.enabledProviders.compactMap { usage(for: $0) }
+        guard !usages.isEmpty else { return false }
+        return usages.contains { now.timeIntervalSince($0.lastUpdated) < interval }
     }
 
     func refresh() async {
@@ -42,66 +60,69 @@ final class UsageManager: ObservableObject {
         let task = Task { @MainActor in
             isLoading = true
             lastError = nil
+            defer { isLoading = false; refreshTask = nil }
 
-            async let claudeTask = claudeProvider.fetchUsage()
-            async let codexTask = codexProvider.fetchUsage()
+            let settings = AppSettings.shared
+            async let claudeTask: UsageData? = settings.isProviderEnabled(.claude) ? claudeProvider.fetchUsage() : nil
+            async let codexTask: UsageData? = settings.isProviderEnabled(.codex) ? codexProvider.fetchUsage() : nil
+            async let kimiTask: UsageData? = settings.isProviderEnabled(.kimi) ? kimiProvider.fetchUsage() : nil
 
-            let (claude, codex) = await (claudeTask, codexTask)
+            let (claude, codex, kimi) = await (claudeTask, codexTask, kimiTask)
 
-            claudeUsage = claude
-            codexUsage = codex
-
-            // Check notifications
-            if let claude = claude {
-                await NotificationService.shared.checkAndSendNotification(
-                    for: claude,
-                    thresholds: AppSettings.shared.enabledThresholds
-                )
-            }
-
-            if let codex = codex {
-                await NotificationService.shared.checkAndSendNotification(
-                    for: codex,
-                    thresholds: AppSettings.shared.enabledThresholds
-                )
-            }
-
-            // Check for app updates (throttled internally to once per 6 hours)
-            if let update = await updateChecker.checkForUpdate() {
-                availableUpdate = update
-                if update.version != lastNotifiedVersion {
-                    NotificationService.shared.sendUpdateNotification(version: update.version)
-                    lastNotifiedVersion = update.version
+            for (provider, data) in [(Provider.claude, claude), (.codex, codex), (.kimi, kimi)] {
+                if settings.isProviderEnabled(provider) {
+                    if let data { self.setLastGood(data, for: provider); self.setUsage(data, for: provider) }
+                    self.lastRefreshTime[provider] = Date()
+                } else {
+                    self.setUsage(nil, for: provider)
+                    self.setLastGood(nil, for: provider)
+                    self.lastRefreshTime.removeValue(forKey: provider)
                 }
-            } else {
-                availableUpdate = nil
             }
 
-            isLoading = false
+            // Check notifications in background (don't block spinner)
+            let thresholds = AppSettings.shared.enabledThresholds
+            Task { @MainActor in
+                for usage in [claude, codex, kimi].compactMap({ $0 }) {
+                    await NotificationService.shared.checkAndSendNotification(
+                        for: usage,
+                        thresholds: thresholds
+                    )
+                }
+            }
+
+            // Check for app updates in the background
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let update = await self.updateChecker.checkForUpdate() {
+                    self.availableUpdate = update
+                    if update.version != self.lastNotifiedVersion {
+                        NotificationService.shared.sendUpdateNotification(version: update.version)
+                        self.lastNotifiedVersion = update.version
+                    }
+                } else {
+                    self.availableUpdate = nil
+                }
+            }
         }
         refreshTask = task
         await task.value
-        refreshTask = nil
     }
 
     func refresh(provider: Provider) async {
-        switch provider {
-        case .claude:
-            claudeUsage = await claudeProvider.fetchUsage()
-            if let usage = claudeUsage {
-                await NotificationService.shared.checkAndSendNotification(
-                    for: usage,
-                    thresholds: AppSettings.shared.enabledThresholds
-                )
-            }
-        case .codex:
-            codexUsage = await codexProvider.fetchUsage()
-            if let usage = codexUsage {
-                await NotificationService.shared.checkAndSendNotification(
-                    for: usage,
-                    thresholds: AppSettings.shared.enabledThresholds
-                )
-            }
+        // Per-provider throttle: respect minimum refresh interval
+        let now = Date()
+        if let last = lastRefreshTime[provider],
+           now.timeIntervalSince(last) < AppSettings.minimumRefreshInterval { return }
+        lastRefreshTime[provider] = now
+
+        let usage = await fetchUsage(for: provider)
+        if let usage { setLastGood(usage, for: provider); setUsage(usage, for: provider) }
+        if let usage {
+            await NotificationService.shared.checkAndSendNotification(
+                for: usage,
+                thresholds: AppSettings.shared.enabledThresholds
+            )
         }
     }
 
@@ -116,7 +137,7 @@ final class UsageManager: ObservableObject {
 
     private func setupRefreshTimer() {
         refreshTimer?.invalidate()
-        let interval = AppSettings.shared.refreshInterval
+        let interval = max(AppSettings.shared.refreshInterval, AppSettings.minimumRefreshInterval)
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor [weak self] in
@@ -138,11 +159,35 @@ final class UsageManager: ObservableObject {
         setupRefreshTimer()
     }
 
-    func getClaudePlanLabel() async -> String? {
-        await claudeProvider.getPlanLabel()
+    func getPlanLabel(for provider: Provider) async -> String? {
+        switch provider {
+        case .claude: return await claudeProvider.getPlanLabel()
+        case .codex: return await codexProvider.getPlanLabel()
+        case .kimi: return await kimiProvider.getPlanLabel()
+        }
     }
 
-    func getCodexPlanLabel() async -> String? {
-        await codexProvider.getPlanLabel()
+    private func setUsage(_ data: UsageData?, for provider: Provider) {
+        switch provider {
+        case .claude: claudeUsage = data
+        case .codex: codexUsage = data
+        case .kimi: kimiUsage = data
+        }
+    }
+
+    private func setLastGood(_ data: UsageData?, for provider: Provider) {
+        switch provider {
+        case .claude: lastGoodClaude = data
+        case .codex: lastGoodCodex = data
+        case .kimi: lastGoodKimi = data
+        }
+    }
+
+    private func fetchUsage(for provider: Provider) async -> UsageData? {
+        switch provider {
+        case .claude: return await claudeProvider.fetchUsage()
+        case .codex: return await codexProvider.fetchUsage()
+        case .kimi: return await kimiProvider.fetchUsage()
+        }
     }
 }

@@ -29,32 +29,32 @@ struct ContentView: View {
             // Header showing active provider name (PRD US-008)
             ProviderHeader(provider: selectedProvider)
 
-            // Provider Tabs
-            ProviderTabs(selectedProvider: Binding(
-                get: { settings.selectedProvider },
-                set: { settings.selectedProvider = $0 }
-            ))
+            // Provider Tabs (hide when only one provider enabled)
+            if settings.enabledProviders.count > 1 {
+                ProviderTabs(selectedProvider: Binding(
+                    get: { settings.selectedProvider },
+                    set: { settings.selectedProvider = $0 }
+                ))
+            }
 
-            if let usage = currentUsage {
-                if settings.appTheme == .standard {
-                    // Usage Ring
-                    UsageRing(
-                        percentage: usage.displayPercentage,
-                        providerColor: usage.provider.color
-                    )
-                    .frame(width: 120, height: 120)
-                    .padding(.vertical, 8)
+            // Fixed-height content area to prevent layout jumps between tabs
+            VStack(spacing: 16) {
+                if let usage = currentUsage {
+                    if settings.appTheme == .standard {
+                        UsageRing(
+                            percentage: usage.displayPercentage,
+                            providerColor: usage.provider.color
+                        )
+                        .frame(width: 120, height: 120)
+                        .padding(.vertical, 8)
 
-                    // Reset Timer
-                    ResetTimer(resetTime: usage.primaryWindow.resetTime)
-                }
+                        ResetTimer(resetTime: usage.primaryWindow.resetTime)
+                    }
 
-                // Limit Bars
-                LimitBars(usage: usage)
+                    LimitBars(usage: usage)
+                } else {
+                    Spacer()
 
-            } else {
-                // Empty state
-                VStack(spacing: 12) {
                     Image(systemName: "chart.bar.xaxis")
                         .font(.largeTitle)
                         .foregroundStyle(.secondary)
@@ -63,10 +63,12 @@ struct ContentView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.vertical, 40)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: settings.appTheme == .standard ? 280 : 120, alignment: .top)
 
             Divider()
 
@@ -107,6 +109,7 @@ struct ContentView: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .task {
+            guard !usageManager.hasRecentData else { return }
             await usageManager.refresh()
         }
     }

@@ -26,7 +26,6 @@ enum UsageStatus: String, Codable {
 
 enum DataSource: String, Codable {
     case api
-    case local
 }
 
 struct UsageWindow: Identifiable, Codable, Equatable {
@@ -74,7 +73,7 @@ struct UsageData: Identifiable, Codable, Equatable {
         primaryWindow: UsageWindow,
         secondaryWindow: UsageWindow? = nil,
         tokensUsed: Int? = nil,
-        dataSource: DataSource = .local,
+        dataSource: DataSource = .api,
         lastUpdated: Date = Date()
     ) {
         self.id = id
@@ -91,7 +90,7 @@ struct UsageData: Identifiable, Codable, Equatable {
     }
 
     var displayPercentage: Double {
-        primaryWindow.percentage
+        min(max(primaryWindow.percentage, 0), 100)
     }
 
     static func empty(for provider: Provider) -> UsageData {
@@ -100,7 +99,7 @@ struct UsageData: Identifiable, Codable, Equatable {
             primaryWindow: UsageWindow(percentage: 0),
             secondaryWindow: nil,
             tokensUsed: nil,
-            dataSource: .local
+            dataSource: .api
         )
     }
 }

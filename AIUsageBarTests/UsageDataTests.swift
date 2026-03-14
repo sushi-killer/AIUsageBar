@@ -113,7 +113,7 @@ final class UsageDataTests: XCTestCase {
         XCTAssertEqual(empty.primaryWindow.percentage, 0)
         XCTAssertNil(empty.secondaryWindow)
         XCTAssertNil(empty.tokensUsed)
-        XCTAssertEqual(empty.dataSource, .local)
+        XCTAssertEqual(empty.dataSource, .api)
     }
 
     func testUsageDataCodable() throws {
@@ -122,7 +122,7 @@ final class UsageDataTests: XCTestCase {
             primaryWindow: UsageWindow(percentage: 45),
             secondaryWindow: UsageWindow(percentage: 70),
             tokensUsed: 50000,
-            dataSource: .local
+            dataSource: .api
         )
 
         let encoder = JSONEncoder()
@@ -141,7 +141,6 @@ final class UsageDataTests: XCTestCase {
 
     func testDataSourceValues() {
         XCTAssertEqual(DataSource.api.rawValue, "api")
-        XCTAssertEqual(DataSource.local.rawValue, "local")
     }
 
     func testDataSourceCodable() throws {
@@ -149,13 +148,10 @@ final class UsageDataTests: XCTestCase {
         let decoder = JSONDecoder()
 
         let apiData = try encoder.encode(DataSource.api)
-        let localData = try encoder.encode(DataSource.local)
 
         let decodedApi = try decoder.decode(DataSource.self, from: apiData)
-        let decodedLocal = try decoder.decode(DataSource.self, from: localData)
 
         XCTAssertEqual(decodedApi, DataSource.api)
-        XCTAssertEqual(decodedLocal, DataSource.local)
     }
 
     // MARK: - UsageStatus Codable Tests

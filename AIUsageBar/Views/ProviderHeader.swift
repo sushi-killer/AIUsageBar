@@ -28,7 +28,7 @@ struct ProviderHeader: View {
         }
         .task(id: provider) {
             let settings = AppSettings.shared
-            let cached = provider == .claude ? settings.cachedClaudePlanLabel : settings.cachedCodexPlanLabel
+            let cached = settings.cachedPlanLabel(for: provider)
 
             if !cached.isEmpty {
                 planLabel = cached
@@ -36,26 +36,17 @@ struct ProviderHeader: View {
                 withAnimation(.easeInOut(duration: 0.2)) { planLabel = nil }
             }
 
-            let fresh = await loadPlanLabel()
+            let fresh = await UsageManager.shared.getPlanLabel(for: provider)
             if fresh != planLabel {
                 withAnimation(.easeInOut(duration: 0.2)) { planLabel = fresh }
             }
 
             if let fresh {
-                if provider == .claude { settings.cachedClaudePlanLabel = fresh }
-                else { settings.cachedCodexPlanLabel = fresh }
+                settings.setCachedPlanLabel(fresh, for: provider)
             }
         }
     }
 
-    private func loadPlanLabel() async -> String? {
-        switch provider {
-        case .claude:
-            return await UsageManager.shared.getClaudePlanLabel()
-        case .codex:
-            return await UsageManager.shared.getCodexPlanLabel()
-        }
-    }
 }
 
 #if DEBUG
@@ -64,7 +55,7 @@ struct ProviderHeader_Previews: PreviewProvider {
         VStack(spacing: 20) {
             ProviderHeader(provider: .claude)
             ProviderHeader(provider: .codex)
-            ProviderHeader(provider: .claude)
+            ProviderHeader(provider: .kimi)
         }
         .padding()
         .frame(width: 320)

@@ -160,7 +160,13 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         completionHandler([.banner, .sound])
     }
 
-    /// Handle notification tap to bring app to foreground
+    /// Handle notification tap to bring app to foreground.
+    ///
+    /// `nonisolated` is required here because `UNUserNotificationCenterDelegate` declares
+    /// this method as nonisolated, and Swift does not allow a `@MainActor`-isolated type to
+    /// satisfy a nonisolated protocol requirement without the explicit `nonisolated` keyword.
+    /// Since `NSApp.activate` must be called on the main thread, we bridge back to the
+    /// MainActor via `Task { @MainActor in }`.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,

@@ -83,8 +83,9 @@ final class FileWatcherTests: XCTestCase {
         let path = provider.logsPath
 
         // Then
-        XCTAssertTrue(path.contains(".claude/projects"))
-        XCTAssertTrue(path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path))
+        XCTAssertNotNil(path)
+        XCTAssertTrue(path!.contains(".claude/projects"))
+        XCTAssertTrue(path!.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path))
     }
 
     func testCodexProviderLogsPathIsValid() {
@@ -95,15 +96,21 @@ final class FileWatcherTests: XCTestCase {
         let path = provider.logsPath
 
         // Then
-        XCTAssertTrue(path.contains(".codex/sessions"))
-        XCTAssertTrue(path.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path))
+        XCTAssertNotNil(path)
+        XCTAssertTrue(path!.contains(".codex/sessions"))
+        XCTAssertTrue(path!.hasPrefix(FileManager.default.homeDirectoryForCurrentUser.path))
     }
 
-    func testAllProvidersHaveLogsPath() {
+    func testProvidersWithLocalLogsHavePath() {
         // Given / When / Then
-        for provider in Provider.allCases {
-            XCTAssertFalse(provider.logsPath.isEmpty, "\(provider) should have a logs path")
+        for provider in Provider.allCases where provider.hasLocalLogs {
+            XCTAssertNotNil(provider.logsPath, "\(provider) should have a logs path")
         }
+    }
+
+    func testKimiProviderHasNoLogsPath() {
+        XCTAssertNil(Provider.kimi.logsPath)
+        XCTAssertFalse(Provider.kimi.hasLocalLogs)
     }
 
     // MARK: - Notification Tests
@@ -346,16 +353,17 @@ final class FileWatcherTests: XCTestCase {
         }
 
         // Then
-        XCTAssertEqual(watchedProviders.count, 2)
+        XCTAssertEqual(watchedProviders.count, 3)
         XCTAssertTrue(watchedProviders.contains(.claude))
         XCTAssertTrue(watchedProviders.contains(.codex))
+        XCTAssertTrue(watchedProviders.contains(.kimi))
     }
 
     func testProviderPathsAreAbsolutePaths() {
         // FSEvents requires absolute paths
-        for provider in Provider.allCases {
+        for provider in Provider.allCases where provider.hasLocalLogs {
             XCTAssertTrue(
-                provider.logsPath.hasPrefix("/"),
+                provider.logsPath!.hasPrefix("/"),
                 "\(provider) path should be absolute"
             )
         }
@@ -434,8 +442,8 @@ final class FileWatcherTests: XCTestCase {
         // but we can verify the logic is present
 
         // Both provider paths should be valid directory path formats
-        for provider in Provider.allCases {
-            let path = provider.logsPath
+        for provider in Provider.allCases where provider.hasLocalLogs {
+            let path = provider.logsPath!
             XCTAssertTrue(path.contains("/"), "Path should be a valid directory path")
             XCTAssertFalse(path.hasSuffix(".jsonl"), "Path should be directory, not file")
         }
@@ -472,7 +480,7 @@ final class FileWatcherTests: XCTestCase {
 
     func testCodexLogsPathMatchesExpectedStructure() {
         // Given
-        let codexPath = Provider.codex.logsPath
+        let codexPath = Provider.codex.logsPath!
 
         // Then - should be ~/.codex/sessions
         XCTAssertTrue(codexPath.hasSuffix(".codex/sessions"))
@@ -481,7 +489,7 @@ final class FileWatcherTests: XCTestCase {
 
     func testCodexLogsPathIsWatchable() {
         // Given
-        let codexPath = Provider.codex.logsPath
+        let codexPath = Provider.codex.logsPath!
 
         // Then - path should be valid for FSEvents
         XCTAssertTrue(codexPath.hasPrefix("/"), "Codex path must be absolute for FSEvents")
@@ -507,6 +515,8 @@ final class FileWatcherTests: XCTestCase {
                 if codexCallCount == 1 {
                     codexExpectation.fulfill()
                 }
+            case .kimi:
+                break
             }
         }
 
@@ -540,7 +550,7 @@ final class FileWatcherTests: XCTestCase {
         // FileWatcher watches: ~/.codex/sessions/
         // FSEvents should recursively detect changes in subdirectories
 
-        let codexPath = Provider.codex.logsPath
+        let codexPath = Provider.codex.logsPath!
 
         // Path should point to sessions directory (parent of date directories)
         XCTAssertTrue(codexPath.hasSuffix("sessions"))
@@ -583,8 +593,8 @@ final class FileWatcherTests: XCTestCase {
         // Both providers should use the same FSEvents configuration
         // This validates consistency in the implementation
 
-        let claudePath = Provider.claude.logsPath
-        let codexPath = Provider.codex.logsPath
+        let claudePath = Provider.claude.logsPath!
+        let codexPath = Provider.codex.logsPath!
 
         // Both should be absolute paths
         XCTAssertTrue(claudePath.hasPrefix("/"))

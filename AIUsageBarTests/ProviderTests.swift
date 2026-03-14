@@ -31,11 +31,13 @@ final class ProviderTests: XCTestCase {
     func testProviderLogsPath() {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
 
-        XCTAssertTrue(Provider.claude.logsPath.contains(".claude/projects"))
-        XCTAssertTrue(Provider.claude.logsPath.hasPrefix(home))
+        XCTAssertTrue(Provider.claude.logsPath!.contains(".claude/projects"))
+        XCTAssertTrue(Provider.claude.logsPath!.hasPrefix(home))
 
-        XCTAssertTrue(Provider.codex.logsPath.contains(".codex/sessions"))
-        XCTAssertTrue(Provider.codex.logsPath.hasPrefix(home))
+        XCTAssertTrue(Provider.codex.logsPath!.contains(".codex/sessions"))
+        XCTAssertTrue(Provider.codex.logsPath!.hasPrefix(home))
+
+        XCTAssertNil(Provider.kimi.logsPath)
     }
 
     func testProviderCodable() throws {
@@ -61,8 +63,9 @@ final class ProviderTests: XCTestCase {
 
     func testProviderAllCases() {
         let allCases = Provider.allCases
-        XCTAssertEqual(allCases.count, 2)
+        XCTAssertEqual(allCases.count, 3)
         XCTAssertTrue(allCases.contains(.claude))
         XCTAssertTrue(allCases.contains(.codex))
+        XCTAssertTrue(allCases.contains(.kimi))
     }
 }

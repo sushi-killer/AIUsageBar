@@ -141,6 +141,33 @@ final class MenuBarLabelTests: XCTestCase {
         XCTAssertNotNil(UsageStatus.red.color)
     }
 
+    // MARK: - Custom Template Tests
+
+    @MainActor
+    func testFormatCustomTemplateWithKimiPlaceholders() {
+        let settings = AppSettings.shared
+        let original = settings.customMenuBarFormat
+
+        settings.customMenuBarFormat = "C:{c}% X:{x}% K:{k}%"
+        XCTAssertEqual(settings.formatCustomTemplate(claude: 45, codex: 30, kimi: 20), "C:45% X:30% K:20%")
+
+        settings.customMenuBarFormat = "{claude}:{c}% {kimi}:{k}%"
+        XCTAssertEqual(settings.formatCustomTemplate(claude: 50, codex: nil, kimi: 10), "Claude:50% Kimi:10%")
+
+        settings.customMenuBarFormat = "{k}%"
+        XCTAssertEqual(settings.formatCustomTemplate(claude: nil, codex: nil, kimi: 75), "75%")
+
+        // Nil kimi value should show dash
+        settings.customMenuBarFormat = "K:{k}%"
+        XCTAssertEqual(settings.formatCustomTemplate(claude: nil, codex: nil, kimi: nil), "K:-%")
+
+        // Multiple spaces should be collapsed
+        settings.customMenuBarFormat = "C:{c}%   K:{k}%"
+        XCTAssertEqual(settings.formatCustomTemplate(claude: 10, codex: nil, kimi: 20), "C:10% K:20%")
+
+        settings.customMenuBarFormat = original
+    }
+
     func testStatusColorsAreDistinct() {
         // Colors should be visually distinct
         let green = UsageStatus.green.color

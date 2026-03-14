@@ -83,4 +83,68 @@ final class KeychainService {
     var hasClaudeCredentials: Bool {
         getClaudeCredentials() != nil
     }
+
+    // MARK: - Generic API Key Storage
+
+    /// Cache: service name → key (read once from Keychain, then served from memory)
+    private var apiKeyCache: [String: String] = [:]
+    private var apiKeyFetchedOnce: Set<String> = []
+
+    func storeAPIKey(_ key: String, forService service: String) {
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        if key.isEmpty {
+            apiKeyCache.removeValue(forKey: service)
+            apiKeyFetchedOnce.insert(service)
+            return
+        }
+
+        let addQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked,
+            kSecValueData as String: Data(key.utf8)
+        ]
+        SecItemAdd(addQuery as CFDictionary, nil)
+
+        // Update cache so subsequent reads skip Keychain
+        apiKeyCache[service] = key
+        apiKeyFetchedOnce.insert(service)
+    }
+
+    func getAPIKey(forService service: String) -> String? {
+        if apiKeyFetchedOnce.contains(service) {
+            return apiKeyCache[service]
+        }
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        apiKeyFetchedOnce.insert(service)
+        if status == errSecSuccess, let data = result as? Data, let key = String(data: data, encoding: .utf8) {
+            apiKeyCache[service] = key
+            return key
+        }
+        return nil
+    }
+
+    func deleteAPIKey(forService service: String) {
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+        apiKeyCache.removeValue(forKey: service)
+        apiKeyFetchedOnce.insert(service)
+    }
 }
