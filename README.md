@@ -23,7 +23,7 @@ and switch between providers in one click.</p>
 - Provider-colored usage bars & ring, status-colored tray icon (green / yellow / red)
 - Smart notifications at configurable thresholds (50%, 75%, 90%)
 - All providers use their respective APIs (Anthropic, OpenAI, Kimi)
-- FSEvents-based file watching for local providers (near-zero CPU at idle)
+- FSEvents-based file watching triggers faster refresh on activity (near-zero CPU at idle)
 - Rate-limit aware polling with configurable refresh interval (120s minimum)
 - Menu bar text customization (Short / Full / Percent / Icon Only / Custom template)
 - Standard and Mini themes
@@ -41,9 +41,13 @@ and switch between providers in one click.</p>
 |:---:|:---:|:---:|
 | ![Claude Bars](docs/screenshots/panel-claude-bars.png) | ![Codex Bars](docs/screenshots/panel-codex-bars.png) | ![Kimi Bars](docs/screenshots/panel-kimi-bars.png) |
 
-| Settings | Notifications |
+| Menu Bar (Short) | Menu Bar (Custom) |
 |:---:|:---:|
-| ![Settings](docs/screenshots/settings.png) | ![Notifications](docs/screenshots/notification.png) |
+| ![Menu Bar Short](docs/screenshots/menubar-short.png) | ![Menu Bar Custom](docs/screenshots/menubar-custom.png) |
+
+| Settings |
+|:---:|
+| ![Settings](docs/screenshots/settings.png) |
 
 ## Installation
 

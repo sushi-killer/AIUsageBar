@@ -21,10 +21,6 @@ final class UsageManager: ObservableObject {
     private var refreshTimer: Timer?
     private var refreshTask: Task<Void, Never>?
 
-    // Last-good cache: keeps UI populated when a fetch returns nil (e.g. 429)
-    private var lastGoodClaude: UsageData?
-    private var lastGoodCodex: UsageData?
-    private var lastGoodKimi: UsageData?
     private var lastRefreshTime: [Provider: Date] = [:]
 
     private init() {
@@ -71,11 +67,10 @@ final class UsageManager: ObservableObject {
 
             for (provider, data) in [(Provider.claude, claude), (.codex, codex), (.kimi, kimi)] {
                 if settings.isProviderEnabled(provider) {
-                    if let data { self.setLastGood(data, for: provider); self.setUsage(data, for: provider) }
+                    if let data { self.setUsage(data, for: provider) }
                     self.lastRefreshTime[provider] = Date()
                 } else {
                     self.setUsage(nil, for: provider)
-                    self.setLastGood(nil, for: provider)
                     self.lastRefreshTime.removeValue(forKey: provider)
                 }
             }
@@ -117,7 +112,7 @@ final class UsageManager: ObservableObject {
         lastRefreshTime[provider] = now
 
         let usage = await fetchUsage(for: provider)
-        if let usage { setLastGood(usage, for: provider); setUsage(usage, for: provider) }
+        if let usage { setUsage(usage, for: provider) }
         if let usage {
             await NotificationService.shared.checkAndSendNotification(
                 for: usage,
@@ -172,14 +167,6 @@ final class UsageManager: ObservableObject {
         case .claude: claudeUsage = data
         case .codex: codexUsage = data
         case .kimi: kimiUsage = data
-        }
-    }
-
-    private func setLastGood(_ data: UsageData?, for provider: Provider) {
-        switch provider {
-        case .claude: lastGoodClaude = data
-        case .codex: lastGoodCodex = data
-        case .kimi: lastGoodKimi = data
         }
     }
 

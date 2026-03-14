@@ -174,12 +174,12 @@ struct SettingsView: View {
                         Spacer()
                     }
 
-                    SecureField("Kimi API Key (sk-kimi-...)", text: $kimiAPIKeyField)
+                    SecureField("Kimi API Key (sk-...)", text: $kimiAPIKeyField)
                         .textFieldStyle(.roundedBorder)
                         .font(.caption)
                         .onChange(of: kimiAPIKeyField) { _ in
                             settings.kimiAPIKey = kimiAPIKeyField
-                            hasKimiKey = !kimiAPIKeyField.isEmpty
+                            hasKimiKey = kimiAPIKeyField.hasPrefix("sk-")
                         }
                 }
             } label: {
@@ -282,7 +282,7 @@ struct SettingsView: View {
             hasClaudeCredentials = KeychainService.shared.hasClaudeCredentials
             hasCodexLogs = Provider.codex.logsPath.map { FileManager.default.fileExists(atPath: $0) } ?? false
             kimiAPIKeyField = settings.kimiAPIKey
-            hasKimiKey = !kimiAPIKeyField.isEmpty
+            hasKimiKey = kimiAPIKeyField.hasPrefix("sk-")
             Task {
                 await notificationService.checkAuthorization()
             }

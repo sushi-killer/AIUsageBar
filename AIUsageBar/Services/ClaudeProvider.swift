@@ -151,10 +151,6 @@ actor ClaudeProvider: UsageProvider {
 
             hasRetriedAfterAuthError = false
 
-            if let jsonString = String(data: data, encoding: .utf8) {
-                logger.debug("Claude API raw response: \(jsonString)")
-            }
-
             let apiResponse = try JSONDecoder().decode(ClaudeAPIResponse.self, from: data)
             return convertAPIResponse(apiResponse)
         } catch {

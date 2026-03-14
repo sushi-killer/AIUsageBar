@@ -45,8 +45,12 @@ actor CodexProvider: UsageProvider {
     /// Cached plan label with TTL
     private var planLabelCache = PlanLabelCache()
 
+    /// Session-level guard: once we've retried after a 401, don't retry again
+    /// until a successful response proves the credentials are valid.
+    private var hasRetriedAfterAuthError = false
+
     func fetchUsage() async -> UsageData? {
-        return await fetchFromAPI()
+        return await fetchFromAPI(isRetry: false)
     }
 
     // MARK: - Plan Label
@@ -111,7 +115,7 @@ actor CodexProvider: UsageProvider {
 
     // MARK: - API
 
-    private func fetchFromAPI() async -> UsageData? {
+    private func fetchFromAPI(isRetry: Bool) async -> UsageData? {
         guard let auth = readAuth() else { return nil }
 
         var request = URLRequest(url: apiURL)
@@ -133,9 +137,21 @@ actor CodexProvider: UsageProvider {
                 return nil
             }
 
-            guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 401 {
+                logger.warning("Codex API returned 401 (isRetry=\(isRetry))")
+                if !isRetry && !hasRetriedAfterAuthError {
+                    hasRetriedAfterAuthError = true
+                    return await fetchFromAPI(isRetry: true)
+                }
                 return nil
             }
+
+            guard httpResponse.statusCode == 200 else {
+                logger.warning("Codex API returned status \(httpResponse.statusCode)")
+                return nil
+            }
+
+            hasRetriedAfterAuthError = false
 
             let apiResponse = try JSONDecoder().decode(CodexUsageResponse.self, from: data)
             return buildFromAPI(apiResponse)
